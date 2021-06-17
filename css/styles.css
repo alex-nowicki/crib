@@ -1,0 +1,58 @@
+.app {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-rows: auto;
+  grid-template-areas:
+  "opponent opponent opponent"
+  "draw play crib"
+  "self self self";
+}
+
+section {
+  border: 2px solid black;
+  padding: 2rem;
+  margin: 1rem;
+  border-radius: 1rem;
+}
+
+section.welcome {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  background-color: AliceBlue;
+}
+
+section.opponent {
+  grid-area: opponent;
+}
+
+section.draw {
+  grid-area: draw;
+}
+
+section.play {
+  grid-area: play;
+}
+
+.play div {
+  border: 2px dashed grey;
+  margin: 1rem;
+  padding: 0.5rem;
+}
+
+section.crib {
+  grid-area: crib;
+}
+
+section.self {
+  grid-area: self;
+}
+
+h2 {
+  font-family: "Bahnschrift Bold", "Helvetica Bold", "Arial Bold", sans-serif;
+  margin-top: 0;
+}
+
+.is-hidden {
+  display: none;
+}
