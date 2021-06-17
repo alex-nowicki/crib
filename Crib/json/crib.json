@@ -1,0 +1,31 @@
+{
+  "players": [
+    {
+      "name": "Player 1",
+      "score": 0,
+      "hand": [],
+      "play": [],
+      "discard": [],
+      "dealer": false,
+      "wins": 0,
+      "loses": 0,
+      "skunks": 0
+    },
+    {
+      "name": "Player 2",
+      "score": 0,
+      "hand": [],
+      "play": [],
+      "discard": [],
+      "dealer": false,
+      "wins": 0,
+      "loses": 0,
+      "skunks": 0
+    }
+  ],
+  "deck": [],
+  "crib": [],
+  "starter": {},
+  "playTally": 0,
+  "phase": "new"
+}
