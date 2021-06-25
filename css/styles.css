@@ -1,4 +1,4 @@
-.app {
+#app {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
   grid-template-rows: auto;
@@ -10,41 +10,58 @@
 
 section {
   border: 2px solid black;
-  padding: 2rem;
-  margin: 1rem;
+  padding: 1rem;
+  margin: 0.5rem;
   border-radius: 1rem;
 }
 
-section.welcome {
+section.active {
+  border: 4px solid green;
+  background-color: lightgreen;
+}
+
+div > *:first-child {
+  margin-top: 0;
+}
+
+#welcome {
   position: fixed;
   width: 100vw;
   height: 100vh;
   background-color: AliceBlue;
 }
 
-section.opponent {
+#opponent {
   grid-area: opponent;
 }
 
-section.draw {
+#draw {
   grid-area: draw;
 }
 
-section.play {
+#play {
   grid-area: play;
 }
 
-.play div {
+#play div {
   border: 2px dashed grey;
-  margin: 1rem;
+  margin: 0 0 0.5rem 0;
   padding: 0.5rem;
+  border-radius: 0.5rem;
 }
 
-section.crib {
+#crib {
   grid-area: crib;
+  position: relative;
 }
 
-section.self {
+#crib img {
+  position: absolute;
+  top: 5rem;
+  left: 0;
+}
+
+#self {
   grid-area: self;
 }
 
@@ -52,6 +69,18 @@ h2 {
   font-family: "Bahnschrift Bold", "Helvetica Bold", "Arial Bold", sans-serif;
   margin-top: 0;
 }
+
+h3 {
+  font-family: "Bahnschrift Bold", "Helvetica Bold", "Arial Bold", sans-serif;
+  margin-bottom: 0.5rem;
+}
+
+.card {
+  width: 100px;
+  margin: 0.5rem;
+}
+
+
 
 .is-hidden {
   display: none;

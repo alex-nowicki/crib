@@ -327,7 +327,6 @@
         "hand": [],
         "play": [],
         "discard": [],
-        "dealer": false,
         "wins": 0,
         "loses": 0,
         "skunks": 0
@@ -338,7 +337,6 @@
         "hand": [],
         "play": [],
         "discard": [],
-        "dealer": false,
         "wins": 0,
         "loses": 0,
         "skunks": 0
@@ -346,46 +344,14 @@
     ],
     "deck": [],
     "crib": [],
+    "play": [],
     "starter": {},
-    "playTally": 0,
+    "tally": 0,
+    "dealer": null,
+    "turn": null,
+    "go": null,
     "phase": "new"
   }
-
-	let gameState;
-  // Phases: New, Deal, Crib, Play, Count, Reset, End
-  // New phase,
-
-
-  let app = {
-    welcome: {
-      section: document.querySelector('.welcome'),
-      buttons: document.querySelectorAll('.welcome button')
-    },
-    self: {
-      hand: document.querySelector('.self .hand'),
-      discard: document.querySelector('.self .discard')
-    },
-    opponent: {
-      hand: document.querySelector('.opponent .hand'),
-      discard: document.querySelector('.opponent .discard')
-    },
-    play: {
-      self: document.querySelector('.play .self'),
-      opponent: document.querySelector('.play .opponent'),
-      tally: document.querySelector('.play .tally')
-    },
-    draw: {
-
-    },
-    crib: document.querySelector('.crib .crib'),
-    buttons: {
-      deal: document.querySelector('#deal'),
-      cut: document.querySelector('#cut'),
-      go: document.querySelector('#go'),
-      new: document.querySelector('#new')
-    }
-  }
-
 
 
 
@@ -393,27 +359,137 @@
 	// Methods
 	//
 
-  let getGameState = function(data) {
-    // Check to see if there are any changes to the game state
-    gameState = data;
-  }
 
-  let setGameState = function(data) {
-    // Update API
-    let options = {
-      user: 'alex-nowicki',
-      token: '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'
+  // State-based UI Templates
+
+  let store = new Reef.Store({
+    data: {}
+  })
+
+  let app = new Reef('#app', {
+    store: store,
+    template: function(props) {
+      return `
+        <section id="welcome" class="is-hidden"></section>
+        <section id="opponent" ${store.data.turn == playerIDs.opponent ? 'class="active"' : ''}></section>
+        <section id="draw"></section>
+        <section id="play"></section>
+        <section id="crib"></section>
+        <section id="self" ${store.data.turn == playerIDs.self ? 'class="active"' : ''}></section>`;
     }
-    gitrows.options(options);
+  });
 
-    gitrows.replace(path, gameState)
-      .then((response)=>{
-        console.log(response);
-      })
-      .catch((error)=>{
-        console.log(error);
-      });
-  }
+  let welcome = new Reef('#welcome', {
+    store: store,
+    template: function(props) {
+      return `
+        <p>Who are you?</p>
+        <button class="identify" data-id="0">${props.players[0].name}</button>
+        <button class="identify" data-id="1">${props.players[1].name}</button>`;
+    },
+    attachTo: app
+  })
+
+  let opponent = new Reef('#opponent', {
+    store: store,
+    template: function(props) {
+      return `
+        <h2>Opponent Area${store.data.dealer == playerIDs.opponent ? ' (dealer)' : ''} ${store.data.go == playerIDs.opponent ? '"Go!"' : ''}</h2>
+        <h3>Score: ${store.data.players[playerIDs.opponent].score}</h3>
+        <div class="hand">
+          <h3>Hand</h3>
+          ${props.players[playerIDs.opponent].hand.map(function(card){
+            return `<img class="card" src="images/cardBack.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
+          }).join('')}
+        </div>
+        <div class="discard">
+          <h3>Discard</h3>
+          ${props.players[playerIDs.opponent].discard.map(function(card){
+            return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
+          }).join('')}
+        </div>`;
+    },
+    attachTo: app
+  })
+
+  let draw = new Reef('#draw', {
+    store: store,
+    template: function(props) {
+      return `
+        <h2>Draw Area</h2>
+        <h3>Current Phase: ${store.data.phase}</h3>
+        <div class="deck">
+          <img class="card" src="images/cardBack.png" />
+        </div>
+        <button id="deal" disabled>Deal Cards</button>
+        <button id="new" disabled>New Game</button>
+        <button id="switch">Switch Player</button>`;
+    },
+    attachTo: app
+  })
+
+  let play = new Reef('#play', {
+    store: store,
+    template: function(props) {
+      return `
+        <h2>Play Area</h2>
+        <div class="opponent">
+          <h3>Opponent</h3>
+          ${props.players[playerIDs.opponent].play.map(function(card){
+            return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
+          }).join('')}
+        </div>
+        <div class="self">
+          <h3>Self</h3>
+          ${props.players[playerIDs.self].play.map(function(card){
+            return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
+          }).join('')}
+        </div>
+        <div class="tally">${props.tally}</div>`;
+    },
+    attachTo: app
+  })
+
+  let crib = new Reef('#crib', {
+    store: store,
+    template: function(props) {
+      return `
+        <h2>Crib</h2>
+        <div class="crib">
+          ${props.crib.map(function(card){
+            return `<img class="card" src="images/cardBack.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
+          }).join('')}
+        </div>`;
+    },
+    attachTo: app
+  })
+
+  let self = new Reef('#self', {
+    store: store,
+    template: function(props) {
+      return `
+        <h2>Self Area${store.data.dealer == playerIDs.self ? ' (dealer)' : ''} ${store.data.go == playerIDs.self ? '"Go!"' : ''}</h2>
+        <h3>Score: ${store.data.players[playerIDs.self].score}</h3>
+        <div class="hand">
+          <h3>Hand</h3>
+          ${props.players[playerIDs.self].hand.map(function(card){
+            return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
+          }).join('')}
+        </div>
+        <div class="discard">
+          <h3>Discard</h3>
+          ${props.players[playerIDs.self].discard.map(function(card){
+            return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
+          }).join('')}
+        </div>
+        <button id="cut" disabled>Cut Deck</button>
+        <button id="go" disabled>Go</button>`;
+    },
+    attachTo: app
+  })
+
+
+  // Data manipulation
 
   // If local storage does not have value, user identifies which player they are
   let identifyPlayer = function() {
@@ -429,184 +505,93 @@
 
   let newGame = function(){
     // Reset the gameState to blank
-    gameState = blankGameState;
-    gameState.phase = 'new';
-
+    store.data = blankGameState;
   }
 
-  let createCard = function(card){
-    let newNode = document.createElement('img');
-    newNode.src = `images/card${card.id}.png`;
-    newNode.classList.add('card');
-    newNode.dataset.id = card.id;
-    newNode.dataset.suit = card.suit;
-    newNode.dataset.rank = card.rank;
-    newNode.dataset.value = card.value;
-    return newNode;
-  }
-
-  let removeAllCards = function(){
-    let cardsInDOM = document.querySelectorAll('.card');
-    for (card of cardsInDOM){
-      card.remove();
-    }
-  }
-
-  let resetPlay = function(){
-    // During the deal phase, clear play
-    if (gameState.phase == "deal"){
-      gameState.players.forEach((item, i) => {
-        item.play = [];
-      });
-    // During the play phase, move cards to discard
-    } else if (gameState.phase == "play"){
-      gameState.players.forEach((item, i) => {
-        let player = gameState.players[i];
-        item.play.forEach((item, i) => {
-          player.discard.append(item);
-        });
-      });
-      item.play = [];
-    }
-  }
-
-  let updateUI = function(state){
-    // Update player names
-    for (let i = 0; i < app.welcome.buttons.length; i++){
-      app.welcome.buttons[i].innerHTML = gameState.players[i].name;
-    }
-
-    // Remove all created cards
-    removeAllCards();
-
-    // Update starter
-
-
-    // Update hands
-    if (state.players[0].hand.length > 0){
-      let self;
-      // Iterate through the list of players
-      state.players.forEach((item, i) => {
-        // Identify the player's hand
-        playerIDs.self == i ? self = true : self = false;
-        // Iterate through the player's hand and create cards
-        state.players[i].hand.forEach((item, i) => {
-          let card = createCard(item);
-          // Deal cards to the appropriate player
-          if (self){
-            app.self.hand.append(card);
-          } else {
-            card.src = `images/cardBack.png`;
-            app.opponent.hand.append(card);
-          }
-        });
-      });
-    }
-
-    // Update play
-    if (state.players[0].play.length > 0){
-      let self;
-      // Iterate through the list of players
-      state.players.forEach((item, i) => {
-        // Identify the player's hand
-        playerIDs.self == i ? self = true : self = false;
-        // Iterate through the player's hand and create cards
-        state.players[i].play.forEach((item, i) => {
-          let card = createCard(item);
-          // Deal cards to the appropriate player
-          if (self){
-            app.play.self.append(card);
-          } else {
-            app.play.opponent.append(card);
-          }
-        });
-      });
-    }
-
-    // Update discards
-    if (state.players[0].discard.length > 0){
-      let self;
-      // Iterate through the list of players
-      state.players.forEach((item, i) => {
-        // Identify the player's discard
-        playerIDs.self == i ? self = true : self = false;
-        state.players[i].discard.forEach((item, i) => {
-          let card = createCard(item);
-          // Fill discard with cards from the appropriate player
-          if (self){
-            app.self.discard.append(card);
-          } else {
-            app.opponent.discard.append(card);
-          }
-        });
-      });
-    }
-
-    // Update crib
-    if (state.crib.length > 0){
-      state.crib.forEach((item, i) => {
-        let card = createCard(item);
-        card.src = `images/cardBack.png`;
-        app.crib.append(card);
-      });
-    }
-
-    // Update tally
-
-    // Update count
-
+  let enableButtons = function() {
     // Toggle button states
-    if (gameState.phase == "new"){
-      app.buttons.cut.disabled = false;
-    } else if (gameState.phase == "deal"){
-      app.buttons.deal.disabled = false;
-      app.buttons.new.disabled = true;
-      app.buttons.cut.disabled = true;
-    } else if (gameState.phase == "crib"){
-      app.buttons.deal.disabled = true;
-    } else if (gameState.phase == "play"){
+    if (store.data.phase == "new"){
+      document.querySelector('#deal').disabled = true;
+      document.querySelector('#new').disabled = false;
+      document.querySelector('#cut').disabled = false;
+      document.querySelector('#go').disabled = true;
+    } else if (store.data.phase == "deal"){
+      document.querySelector('#deal').disabled = false;
+      document.querySelector('#new').disabled = false;
+      document.querySelector('#cut').disabled = true;
+      document.querySelector('#go').disabled = true;
+    } else if (store.data.phase == "crib"){
+      document.querySelector('#deal').disabled = true;
+      document.querySelector('#new').disabled = false;
+      document.querySelector('#cut').disabled = true;
+      document.querySelector('#go').disabled = true;
+    } else if (store.data.phase == "play"){
+      document.querySelector('#deal').disabled = true;
+      document.querySelector('#new').disabled = false;
+      document.querySelector('#cut').disabled = true;
+      document.querySelector('#go').disabled = false;
+    } else if (store.data.phase == "count"){
 
-    } else if (gameState.phase == "count"){
+    } else if (store.data.phase == "reset"){
 
-    } else if (gameState.phase == "reset"){
-
-    } else if (gameState.phase == "end"){
+    } else if (store.data.phase == "end"){
 
     }
-
   }
 
   let cutDeck = function() {
-    resetPlay();
-    let drawDeck = cards.slice();
-    for (let i = 0; i < 2; i++){
-      let randomNum = Math.floor(Math.random() * 53);
-      gameState.players[i].play.push(drawDeck[randomNum]);
-      drawDeck.splice(randomNum, 1);
+
+    // Determine the first dealer in a new game
+    if (store.data.phase === "new"){
+      // Reset play area
+      for (let i = 0; i < 2; i++){
+        store.data.players[i].play = [];
+      }
+      // Create duplicate of deck to draw from
+      let drawDeck = cards.slice();
+      // Draw two random cards and push them to play area
+      for (let i = 0; i < 2; i++){
+        let randomNum = Math.floor(Math.random() * (drawDeck.length - 1));
+        store.data.players[i].play.push(drawDeck[randomNum]);
+        drawDeck.splice(randomNum, 1);
+      }
+      // Determine who has the lower rank, if a tie, bail
+      if (store.data.players[playerIDs.self].play[0].rank < store.data.players[playerIDs.opponent].play[0].rank){
+        store.data.dealer = playerIDs.self;
+        store.data.turn = playerIDs.opponent;
+      } else if (store.data.players[playerIDs.self].play[0].rank > store.data.players[playerIDs.opponent].play[0].rank) {
+        store.data.dealer = playerIDs.opponent;
+        store.data.turn = playerIDs.self;
+      } else {
+        return;
+      }
+      // Once a dealer is determined, pass to the deal phase
+      store.data.phase = "deal";
+
+    // Determine the starter for the round
+    } else if (store.data.phase === "play"){
+      let randomNum = Math.floor(Math.random() * (drawDeck.length - 1));
+      store.data.starter = store.data.deck[randomNum];
+      store.data.deck.splice(randomNum, 1);
     }
-    if (gameState.players[playerIDs.self].play[0].rank > gameState.players[playerIDs.opponent].play[0].rank){
-      gameState.players[playerIDs.self].dealer = true;
-      gameState.players[playerIDs.opponent].dealer = false;
-    } else if (gameState.players[playerIDs.self].play[0].rank < gameState.players[playerIDs.opponent].play[0].rank) {
-      gameState.players[playerIDs.self].dealer = false;
-      gameState.players[playerIDs.opponent].dealer = true;
-    } else {
-      return;
-    }
-    gameState.phase = "deal";
+
   }
 
 
   // Select a random array of buttons from the bank
   let dealCards = function() {
-    // Clear play area of cards from new game cut
-    resetPlay();
+
+    // Reset play area
+    for (let i = 0; i < 2; i++){
+      store.data.players[i].play = [];
+    }
+
     // Create a copy of the cards array
     let drawDeck = cards.slice();
     let numCards = drawDeck.length;
     let hands = [[],[]];
     for (let i = 0; i < 100; i++){
-      let randomNum = Math.floor(Math.random() * 53);
+      let randomNum = Math.floor(Math.random() * (drawDeck.length - 1));
       if (drawDeck[randomNum]){
         if (hands[0].length < 6){
           hands[0].push(drawDeck[randomNum]);
@@ -621,13 +606,120 @@
       }
     }
 
-    // Update game state
-    gameState.deck = drawDeck;
-    gameState.players.forEach((item, i) => {
-      gameState.players[i].hand = hands[i];
-    });
-    gameState.phase = 'crib';
+    // Assign a hand to each player
+    store.data.players[0].hand = hands[0];
+    store.data.players[1].hand = hands[1];
 
+    // Once the deal is complete, pass to the crib phase
+    store.data.phase = 'crib';
+
+  }
+
+  let go = function() {
+
+    if (store.data.go == null){
+
+      // Check whether the player has a valid card to play, if so alert, and bail
+      let tallyDiff = 31 - store.data.tally;
+      store.data.players[playerIDs.self].hand.forEach((card, i) => {
+        if (card.value <= tallyDiff){
+          alert('You have a valid card to play');
+          return;
+        }
+      });
+
+      // Assign the go
+      store.data.go = playerIDs.self;
+
+      // Switch the turn to the other player
+      store.data.turn = playerIDs.opponent;
+
+      // Assign a point to the other player
+      store.data.players[playerIDs.opponent].score += 1;
+
+      // Check whether opponent has a valid card to play, if so, bail
+      let valid = false;
+      store.data.players[playerIDs.opponent].hand.forEach((card, i) => {
+        if (card.value <= tallyDiff){
+          valid = true;
+        }
+      });
+
+      if (!valid){
+        console.log('go round end');
+        roundEnd();
+      }
+
+    }
+
+  }
+
+  let roundEnd = function() {
+
+    // Reset the tally to 0
+    store.data.tally = 0;
+    // Reset the go
+    store.data.go = null;
+
+    // Move played cards to the discard, and reset the play area for each player
+    store.data.players[playerIDs.self].play.forEach((card, i) => {
+      store.data.players[playerIDs.self].discard.push(card);
+    });
+    store.data.players[playerIDs.self].play = [];
+    store.data.players[playerIDs.opponent].play.forEach((card, i) => {
+      store.data.players[playerIDs.opponent].discard.push(card);
+    });
+    store.data.players[playerIDs.opponent].play = [];
+    // Reset the global play array
+    store.data.play = [];
+
+    // Check whether either player still has cards left in hand
+    if (store.data.players[playerIDs.self].hand.length !== 0 || store.data.players[playerIDs.opponent].hand.length !== 0){
+      // Determine the first player for the next round
+      store.data.turn == playerIDs.self ? store.data.turn = playerIDs.opponent : store.data.turn = playerIDs.self;
+    } else {
+      // Reset turn and go and pass to the count phase
+      store.data.turn = null;
+      store.data.phase = "count";
+      score();
+    }
+  }
+
+  let score = function() {
+    // Check for flush
+
+    // Check for series
+
+    // Check for ranks
+
+    // Check for fifteens
+
+    // Check for jack
+  }
+
+  let switchPlayer = function() {
+    let index1 = playerIDs.self;
+    let index2 = playerIDs.opponent;
+    playerIDs.self = index2;
+    playerIDs.opponent = index1;
+    app.render();
+  }
+
+  let updateServer = function(data) {
+    // Update API
+    let options = {
+      user: 'alex-nowicki',
+      token: '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'
+    }
+
+    gitrows.options(options);
+    gitrows.replace(path, store.data)
+      .then((response)=>{
+        // console.log(response);
+      })
+      .catch((error)=>{
+        // console.log(error);
+      });
   }
 
 
@@ -640,12 +732,21 @@
   let path = '@github/alex-nowicki/alex-nowicki.github.io/data/crib.json';
 
   gitrows.get(path)
-    .then(data => {
-      getGameState(data);
-      console.log(gameState);
-      updateUI(gameState);
+    .then((data)=>{
+      console.log(data);
+      store.data = data;
+      // console.log(store.data);
+      app.render();
     })
-    .catch(error => console.error(error))
+    .catch((error)=>{
+      // console.error(error)
+    });
+
+  document.addEventListener('render', function (event){
+    if (event.target.id == 'self' || event.target.id == 'draw'){
+      enableButtons();
+    }
+  })
 
   let playerIDs = identifyPlayer();
 
@@ -654,19 +755,115 @@
 
     // Card event listeners
     if (event.target.classList.contains('card')){
+      let targetCard = event.target.dataset;
+      let targetId = Number(event.target.dataset.id);
 
-      if (gameState.phase === 'crib') {
-        // event.target.src = "images/cardBack.png";
-        gameState.crib.push();
-        app.crib.append(event.target);
+      let findCard = function(elem) {
+        if (elem.id == targetId) {
+          return elem
+        };
+      }
 
-        if (app.crib.children.length === 4){
-          gameState.phase = 'play';
-          alert(gameState.phase);
+      if (store.data.phase === 'crib') {
+
+        // Add selected card to the crib unless the player has 4 cards
+        if (store.data.players[playerIDs.self].hand.length > 4) {
+          store.data.crib.push(cards[targetId-1]);
+          store.data.players[playerIDs.self].hand.splice(store.data.players[playerIDs.self].hand.findIndex(findCard), 1);
+
+          // AI SELECTION
+          store.data.crib.push(store.data.players[playerIDs.opponent].hand[0]);
+          store.data.players[playerIDs.opponent].hand.splice(0, 1);
         }
 
-      } else if (gameState.phase === 'play') {
-        app.play.self.append(event.target);
+        // If the crib is full, pass to the play phase
+        if (store.data.crib.length === 4){
+          store.data.phase = 'play';
+        }
+
+      } else if (store.data.phase === 'play') {
+
+        // Check whether it's the player's turn and the selected card is valid
+        if (store.data.turn == playerIDs.self && (Number(targetCard.value) + store.data.tally) < 32){
+
+          //Add the card to the play area and remove from hand
+          store.data.players[playerIDs.self].play.push(cards[targetId-1]);
+          store.data.play.push(cards[targetId-1]);
+          store.data.players[playerIDs.self].hand.splice(store.data.players[playerIDs.self].hand.findIndex(findCard), 1);
+
+          // Update the tally
+          store.data.tally += Number(targetCard.value);
+
+          // If tally equals 15 or 31, assign points
+          if (store.data.tally == 15){
+            store.data.players[playerIDs.self].score += 2;
+          } else if (store.data.tally == 31) {
+            store.data.players[playerIDs.self].score += 2;
+          }
+
+          // If same rank, assign points
+          if (store.data.play.length > 1 && targetCard.rank == store.data.play[store.data.play.length - 2].rank){
+            console.log('double');
+            store.data.players[playerIDs.self].score += 2;
+            if (store.data.play.length > 2 && targetCard.rank == store.data.play[store.data.play.length - 3].rank){
+              console.log('triple');
+              store.data.players[playerIDs.self].score += 4;
+              if (store.data.play.length > 3 && targetCard.rank == store.data.play[store.data.play.length - 4].rank){
+                console.log('quadruple');
+                store.data.players[playerIDs.self].score += 6;
+              }
+            }
+          }
+
+          // If sequence, assign points
+          if (store.data.play.length > 2){
+            let seqLength = 0;
+            let playSeq = store.data.play.map(x => x.rank);
+            console.log('play length', playSeq.length);
+            for (let i = 3; i <= playSeq.length; i++){
+              let arr = playSeq.slice(-i);
+              let max = Math.max(...arr);
+              let min = Math.min(...arr);
+              console.log(-i);
+              console.log(max, min);
+              console.log('length', arr.length);
+              if (max - min + 1 == arr.length){
+                console.log('sequence of', arr.length);
+                seqLength = arr.length;
+              } else {
+                break;
+              }
+            }
+            if (seqLength > 2){
+              console.log(seqLength, 'points awarded');
+              store.data.players[playerIDs.self].score += seqLength;
+            }
+          }
+
+          // If opponent still has cards, they haven't passed, and the tally is not 31, switch turns
+          if (store.data.players[playerIDs.opponent].hand.length > 0 && store.data.go !== playerIDs.opponent && store.data.tally < 31){
+            store.data.turn = playerIDs.opponent;
+
+          // If the tally is 31, end the round
+          } else if (store.data.tally == 31){
+            console.log('31 round end');
+            roundEnd();
+
+          // If both players no longer have cards, end the play phase
+          } else if (store.data.players[playerIDs.self].hand.length === 0 && store.data.players[playerIDs.opponent].hand.length === 0){
+            console.log('no cards phase end');
+            roundEnd();
+          }
+
+
+        // Warn player if it's not their turn
+        } else if (store.data.turn == playerIDs.opponent) {
+          alert("It's your opponent's turn to play");
+
+        // Warn player if the selected card is not valid
+        } else {
+          alert('Choose another card or go, this card would bust');
+        }
 
       }
 
@@ -689,7 +886,11 @@
 
     // Go button event listener
     if (event.target.id === 'go'){
+      go();
+    }
 
+    if (event.target.id === 'switch'){
+      switchPlayer();
     }
 
     // Player identification buttons event listeners
@@ -700,33 +901,9 @@
       app.welcome.section.classList.add('is-hidden');
     }
 
-    console.log(gameState);
-    // Update game state
-    setGameState(gameState);
-    // Update UI
-    updateUI(gameState);
+    // Update server with new game state
+    updateServer(store.data);
 
   })
 
 })();
-
-
-
-
-// Step 1: Determine the dealer
-
-// Step 2: Deal 6 cards to each player
-
-// Push hands to the JSON
-
-// Step 3: Each player discards two cards to the crib
-
-// Step 4: Cut and reveal starter
-
-// Step 5: play
-
-// Step 6: Counting the hands
-
-// Step 7: Reset
-
-// Empty JSON arrays
