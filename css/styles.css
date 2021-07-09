@@ -55,14 +55,36 @@ div > *:first-child {
   position: relative;
 }
 
-#crib img {
-  position: absolute;
-  top: 5rem;
-  left: 0;
+#self { grid-area: self; }
+
+#self, #opponent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto;
+  grid-template-areas:
+  "info info"
+  "hand discard"
+  "buttons buttons";
 }
 
-#self {
-  grid-area: self;
+#self .info, #opponent .info {grid-area: info; }
+#self .hand, #opponent .hand { grid-area: hand; }
+#self .discard, #opponent .discard { grid-area: discard; }
+#self .buttons { grid-area: buttons; }
+
+#self .discard .card,
+#opponent .discard .card,
+#crib .card,
+#play .card {
+  margin-left: -5rem;
+}
+
+#self .discard .card:nth-of-type(1),
+#opponent .discard .card:nth-of-type(1),
+#crib .card:nth-of-type(1),
+#play .self .card:nth-of-type(1),
+#play .opponent .card:nth-of-type(1) {
+  margin-left: auto;
 }
 
 h2 {

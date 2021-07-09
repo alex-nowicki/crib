@@ -359,6 +359,46 @@
 	// Methods
 	//
 
+  // Helper Functions
+
+  /**
+   * Check whether a player has a valid card to play
+   * @param {Number} id - The player id
+   * @return {Boolean}  - Returns true if a valid card exists
+   */
+  let checkValidPlay = function(id){
+    let diff = 31 - store.data.tally;
+    let isValid = false;
+    store.data.players[id].hand.forEach((card, i) => {
+      if (card.value <= diff){
+        isValid = true;
+      }
+    });
+    return isValid;
+  }
+
+  /**
+   * Check for duplicate ranks in an array of cards
+   * @param {Array} arr - The array of cards check
+   * @return {Object}   - The number of duplicates per rank
+   */
+  let findDuplicates = function(arr) {
+   let counts = {}
+   for (let i = 0; i < arr.length; i++){
+       if (counts[arr[i]]){
+       counts[arr[i]] += 1
+       } else {
+       counts[arr[i]] = 1
+       }
+      }
+      // for (let prop in counts){
+      //     if (counts[prop] >= 2){
+      //         console.log(prop + " counted: " + counts[prop] + " times.")
+      //     }
+      // }
+    return counts;
+  }
+
 
   // State-based UI Templates
 
@@ -371,11 +411,11 @@
     template: function(props) {
       return `
         <section id="welcome" class="is-hidden"></section>
-        <section id="opponent" ${store.data.turn == playerIDs.opponent ? 'class="active"' : ''}></section>
+        <section id="opponent" ${props.turn == playerIDs.opponent ? 'class="active"' : ''}></section>
         <section id="draw"></section>
         <section id="play"></section>
         <section id="crib"></section>
-        <section id="self" ${store.data.turn == playerIDs.self ? 'class="active"' : ''}></section>`;
+        <section id="self" ${props.turn == playerIDs.self ? 'class="active"' : ''}></section>`;
     }
   });
 
@@ -394,8 +434,11 @@
     store: store,
     template: function(props) {
       return `
-        <h2>Opponent Area${store.data.dealer == playerIDs.opponent ? ' (dealer)' : ''} ${store.data.go == playerIDs.opponent ? '"Go!"' : ''}</h2>
-        <h3>Score: ${store.data.players[playerIDs.opponent].score}</h3>
+        <div class="info">
+          <h2>Opponent Area${props.dealer == playerIDs.opponent ? ' (dealer)' : ''} ${store.data.go == playerIDs.opponent ? '"Go!"' : ''}</h2>
+          <h3>Name: ${props.players[playerIDs.self].name}</h3>
+          <h3>Score: ${props.players[playerIDs.opponent].score}</h3>
+        </div>
         <div class="hand">
           <h3>Hand</h3>
           ${props.players[playerIDs.opponent].hand.map(function(card){
@@ -417,12 +460,14 @@
     template: function(props) {
       return `
         <h2>Draw Area</h2>
-        <h3>Current Phase: ${store.data.phase}</h3>
+        <h3>Current Phase: ${props.phase}</h3>
         <div class="deck">
           <img class="card" src="images/cardBack.png" />
+          <img class="card ${Object.keys(props.starter).length === 0 ? 'is-hidden' : ''}" src="images/card${props.starter.id}.png" data-id="${props.starter.id}" data-suit="${props.starter.suit}" data-rank="${props.starter.rank}" data-value="${props.starter.value}"/>
         </div>
         <button id="deal" disabled>Deal Cards</button>
-        <button id="new" disabled>New Game</button>
+        <button id="new">New Game</button>
+        <button id="reset">Reset</button>
         <button id="switch">Switch Player</button>`;
     },
     attachTo: app
@@ -455,9 +500,9 @@
     template: function(props) {
       return `
         <h2>Crib</h2>
-        <div class="crib">
+        <div class="${props.phase == 'count' ? 'is-shown' : ''}">
           ${props.crib.map(function(card){
-            return `<img class="card" src="images/cardBack.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
+            return `<img class="card" src="images/card${props.phase == 'count' ? card.id : "Back"}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
           }).join('')}
         </div>`;
     },
@@ -468,8 +513,11 @@
     store: store,
     template: function(props) {
       return `
-        <h2>Self Area${store.data.dealer == playerIDs.self ? ' (dealer)' : ''} ${store.data.go == playerIDs.self ? '"Go!"' : ''}</h2>
-        <h3>Score: ${store.data.players[playerIDs.self].score}</h3>
+        <div class="info">
+          <h2>Self Area${props.dealer == playerIDs.self ? ' (dealer)' : ''} ${props.go == playerIDs.self ? '"Go!"' : ''}</h2>
+          <h3>Name: ${props.players[playerIDs.self].name}</h3>
+          <h3>Score: ${props.players[playerIDs.self].score}</h3>
+        </div>
         <div class="hand">
           <h3>Hand</h3>
           ${props.players[playerIDs.self].hand.map(function(card){
@@ -482,8 +530,10 @@
             return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
           }).join('')}
         </div>
-        <button id="cut" disabled>Cut Deck</button>
-        <button id="go" disabled>Go</button>`;
+        <div class="buttons">
+          <button id="cut" disabled>Cut Deck</button>
+          <button id="go" disabled>Go</button>
+        </div>`;
     },
     attachTo: app
   })
@@ -515,23 +565,37 @@
       document.querySelector('#new').disabled = false;
       document.querySelector('#cut').disabled = false;
       document.querySelector('#go').disabled = true;
+      document.querySelector('#reset').disabled = true;
     } else if (store.data.phase == "deal"){
       document.querySelector('#deal').disabled = false;
       document.querySelector('#new').disabled = false;
       document.querySelector('#cut').disabled = true;
       document.querySelector('#go').disabled = true;
+      document.querySelector('#reset').disabled = true;
     } else if (store.data.phase == "crib"){
       document.querySelector('#deal').disabled = true;
       document.querySelector('#new').disabled = false;
       document.querySelector('#cut').disabled = true;
       document.querySelector('#go').disabled = true;
+      document.querySelector('#reset').disabled = true;
+    } else if (store.data.phase == "starter"){
+      document.querySelector('#deal').disabled = true;
+      document.querySelector('#new').disabled = false;
+      document.querySelector('#cut').disabled = false;
+      document.querySelector('#go').disabled = true;
+      document.querySelector('#reset').disabled = true;
     } else if (store.data.phase == "play"){
       document.querySelector('#deal').disabled = true;
       document.querySelector('#new').disabled = false;
       document.querySelector('#cut').disabled = true;
       document.querySelector('#go').disabled = false;
+      document.querySelector('#reset').disabled = true;
     } else if (store.data.phase == "count"){
-
+      document.querySelector('#deal').disabled = true;
+      document.querySelector('#new').disabled = false;
+      document.querySelector('#cut').disabled = true;
+      document.querySelector('#go').disabled = true;
+      document.querySelector('#reset').disabled = false;
     } else if (store.data.phase == "reset"){
 
     } else if (store.data.phase == "end"){
@@ -569,14 +633,15 @@
       store.data.phase = "deal";
 
     // Determine the starter for the round
-    } else if (store.data.phase === "play"){
-      let randomNum = Math.floor(Math.random() * (drawDeck.length - 1));
+    } else if (store.data.phase === "starter"){
+      let randomNum = Math.floor(Math.random() * (store.data.deck.length - 1));
       store.data.starter = store.data.deck[randomNum];
       store.data.deck.splice(randomNum, 1);
+      // Once the starter is determined, pass to the play phase
+      store.data.phase = "play";
     }
 
   }
-
 
   // Select a random array of buttons from the bank
   let dealCards = function() {
@@ -598,6 +663,7 @@
         } else if (hands[1].length < 6){
           hands[1].push(drawDeck[randomNum]);
         } else {
+          store.data.deck = drawDeck;
           break;
         }
         drawDeck.splice(randomNum, 1);
@@ -620,13 +686,10 @@
     if (store.data.go == null){
 
       // Check whether the player has a valid card to play, if so alert, and bail
-      let tallyDiff = 31 - store.data.tally;
-      store.data.players[playerIDs.self].hand.forEach((card, i) => {
-        if (card.value <= tallyDiff){
-          alert('You have a valid card to play');
-          return;
-        }
-      });
+      if (checkValidPlay(playerIDs.self)){
+        alert('You have a card you can play!');
+        return;
+      }
 
       // Assign the go
       store.data.go = playerIDs.self;
@@ -638,23 +701,17 @@
       store.data.players[playerIDs.opponent].score += 1;
 
       // Check whether opponent has a valid card to play, if so, bail
-      let valid = false;
-      store.data.players[playerIDs.opponent].hand.forEach((card, i) => {
-        if (card.value <= tallyDiff){
-          valid = true;
-        }
-      });
-
-      if (!valid){
-        console.log('go round end');
-        roundEnd();
+      console.log('Does opponent have valid play', checkValidPlay(playerIDs.opponent))
+      if (!checkValidPlay(playerIDs.opponent)){
+        console.log('ROUND END: GO');
+        playEnd();
       }
 
     }
 
   }
 
-  let roundEnd = function() {
+  let playEnd = function() {
 
     // Reset the tally to 0
     store.data.tally = 0;
@@ -678,23 +735,223 @@
       // Determine the first player for the next round
       store.data.turn == playerIDs.self ? store.data.turn = playerIDs.opponent : store.data.turn = playerIDs.self;
     } else {
-      // Reset turn and go and pass to the count phase
-      store.data.turn = null;
-      store.data.phase = "count";
-      score();
+      roundEnd();
     }
   }
 
-  let score = function() {
-    // Check for flush
+  let roundEnd = function() {
+    // Reset turn and go and pass to the count phase
+    store.data.turn = null;
+    store.data.phase = "count";
+    // Score each hand and the crib
+    store.data.players[playerIDs.self].score += score(store.data.players[playerIDs.self].discard);
+    store.data.players[playerIDs.opponent].score += score(store.data.players[playerIDs.opponent].discard);
+    if (playerIDs.self == store.dealer){
+      store.data.players[playerIDs.self].score += score(store.data.crib);
+    } else {
+      store.data.players[playerIDs.opponent].score += score(store.data.crib);
+    }
+  }
 
-    // Check for series
+  /**
+   * Return a score for a hand of cards
+   * @param {Array} hand - The array of cards to score
+   * @return {Number}   - The score
+   */
+  let score = function(hand) {
+    let handScore = 0;
+    let suits = [];
+    let ranks = [];
+    let values = [];
+    let fifteens = 0;
 
-    // Check for ranks
+    // Create arrays for card suits, ranks and values
+    hand.forEach((card, i) => {
+      // Check for flush
+      suits.push(card.suit);
+      // Check for ranks
+      ranks.push(card.rank);
+      // Check for fifteens
+      values.push(card.value);
+      // Check for jack of same suit
+      if (card.rank == 11 && card.suit == store.data.starter.suit){
+        console.log('SCORE: Jack of Same Suit');
+        handScore += 2;
+      }
+    });
+
+    // Add starter to the ranks and values arrays
+    ranks.push(store.data.starter.rank);
+    values.push(store.data.starter.value);
 
     // Check for fifteens
+    for (let i = 0; i < (values.length - 1); i++){
+      let sum = 0;
+      let offset = 0;
+      // Add value of the first card to the sum
+      sum += values[i];
+      for (let j = (i + 1); j < values.length; j++){
+        sum += values[j];
+        if (sum < 15){
+          continue;
+        } else if (sum == 15) {
+          fifteens += 1;
+        }
+        // Reset back to the original number
+        sum = values[i];
+        // Check for double skip #-#-#
+        if (i == 0 && offset == 1){
+          let sumCopy = sum;
+          sumCopy += (values[2] + values[4]);
+          if (sumCopy == 15){
+            fifteens += 1;
+          }
+        }
+        // Increase offset to skip over a card
+        offset += 1;
+        j = i + offset;
+      }
 
-    // Check for jack
+    }
+
+    console.log('SCORE: ' + fifteens + ' fifteens');
+    handScore += 2 * fifteens;
+
+    // Check for flush
+    suits = [...new Set(suits)];
+    if (suits.length == 1){
+      console.log('SCORE: 4 card flush');
+      handScore += 4;
+      if (store.data.starter.suit == suits[0]){
+        console.log('SCORE: 5 card flush');
+        handScore += 1;
+      }
+    }
+
+    // Check for nth of a kind
+    let double = [];
+    let triple = [];
+    let quadruple = [];
+    let ranksDupl = findDuplicates(ranks);
+    Object.values(ranksDupl).forEach((val, i) => {
+      if (val == 2){
+        double.push(Object.keys(ranksDupl)[i]);
+      } else if (val == 3){
+        triple.push(Object.keys(ranksDupl)[i]);
+      } else if (val == 4){
+        quadruple.push(Object.keys(ranksDupl)[i]);
+      }
+    });
+
+    // Check for runs
+    let findRuns = function(arr){
+      // Sort the array
+      arr.sort(function(a, b){return a - b});
+      // Remove duplicates
+      let uniq = [...new Set(arr)];
+      // Check if current elem is either the same as previous or is one more
+      let run = [];
+      for (let i = 0; i < (uniq.length - 1); i++){
+        if (uniq[i+1] - uniq[i] == 1){
+          // Run detected
+          if (run.length == 0){
+            run.push(uniq[i]);
+          }
+          run.push(uniq[i+1]);
+        } else {
+          // Run broken
+          if (run.length > 2){
+            break;
+          // Run reset
+          } else {
+            run = [];
+          }
+        }
+      }
+      return run;
+    }
+
+    let run = findRuns(ranks);
+
+    if (triple.length == 1){
+      if (run.length == 3){
+        // Triple Run of Three
+        console.log('SCORE: triple run of three');
+        handScore += 15;
+      } else {
+        // Three of a Kind
+        console.log('SCORE: three of a kind');
+        handScore += 6;
+      }
+    } else if (double.length == 2){
+      if (run.length == 3){
+        // Quadruple Run of Three
+        console.log('SCORE: quadruple run of three');
+        handScore += 16;
+      } else {
+        // 2 x Two of a Kind
+        console.log('SCORE: 2 x two of a kind');
+        handScore += 4;
+      }
+    } else if (double.length == 1){
+      if (run.length == 4){
+        // Double Run of Four
+        console.log('SCORE: double run of four');
+        handScore += 10;
+      } else if (run.length == 3){
+        if (run.includes(Number(double[0]))){
+          // Double Run of Three
+          console.log('SCORE: double run of three');
+          handScore += 8;
+        } else {
+          // Two of a Kind and a Run of Three
+          console.log('SCORE: two of a kind and a run of three');
+          handScore += 5;
+        }
+      } else {
+        // Two of a Kind
+        console.log('SCORE: two of a kind');
+        handScore += 2;
+      }
+    } else if (run.length == 3){
+      // Run of Three
+      console.log('SCORE: run of three');
+      handScore += 3;
+    } else if (run.length == 4){
+      // Run of Four
+      console.log('SCORE: run of four');
+      handScore += 4;
+    } else if (run.length == 5){
+      // Run of Five
+      console.log('SCORE: run of five');
+      handScore += 5;
+    }
+
+    console.log('Hand score is ' + handScore);
+    return handScore;
+  }
+
+  let reset = function(){
+    // Switch dealer
+    if (store.data.dealer == playerIDs.self){
+      store.data.dealer = playerIDs.opponent;
+      store.data.turn = playerIDs.self;
+    } else {
+      store.data.dealer = playerIDs.self;
+      store.data.turn = playerIDs.opponent;
+    }
+
+    // Remove all card from the current play
+    store.data.players[playerIDs.self].discard = [];
+    store.data.players[playerIDs.opponent].discard = [];
+    store.data.crib = [];
+    store.data.starter = {};
+
+    // Pass on to the deal phase
+    store.data.phase = 'deal';
+
+    console.log(store.data);
+
   }
 
   let switchPlayer = function() {
@@ -776,9 +1033,9 @@
           store.data.players[playerIDs.opponent].hand.splice(0, 1);
         }
 
-        // If the crib is full, pass to the play phase
+        // If the crib is full, pass to the starter phase
         if (store.data.crib.length === 4){
-          store.data.phase = 'play';
+          store.data.phase = 'starter';
         }
 
       } else if (store.data.phase === 'play') {
@@ -803,42 +1060,86 @@
 
           // If same rank, assign points
           if (store.data.play.length > 1 && targetCard.rank == store.data.play[store.data.play.length - 2].rank){
-            console.log('double');
+            console.log('PLAY: double');
             store.data.players[playerIDs.self].score += 2;
             if (store.data.play.length > 2 && targetCard.rank == store.data.play[store.data.play.length - 3].rank){
-              console.log('triple');
+              console.log('PLAY: triple');
               store.data.players[playerIDs.self].score += 4;
               if (store.data.play.length > 3 && targetCard.rank == store.data.play[store.data.play.length - 4].rank){
-                console.log('quadruple');
+                console.log('PLAY: quadruple');
                 store.data.players[playerIDs.self].score += 6;
               }
             }
           }
 
           // If sequence, assign points
-          if (store.data.play.length > 2){
-            let seqLength = 0;
-            let playSeq = store.data.play.map(x => x.rank);
-            console.log('play length', playSeq.length);
-            for (let i = 3; i <= playSeq.length; i++){
-              let arr = playSeq.slice(-i);
-              let max = Math.max(...arr);
-              let min = Math.min(...arr);
-              console.log(-i);
-              console.log(max, min);
-              console.log('length', arr.length);
-              if (max - min + 1 == arr.length){
-                console.log('sequence of', arr.length);
-                seqLength = arr.length;
+
+
+          // Check for runs
+          let findRuns = function(arr){
+            // Sort the array
+            arr.sort(function(a, b){return a - b});
+            // Remove duplicates
+            let uniq = arr;
+            // Check if current elem is either the same as previous or is one more
+            let run = [];
+            for (let i = 0; i < (uniq.length - 1); i++){
+              if (uniq[i+1] - uniq[i] == 1){
+                // Run detected
+                if (run.length == 0){
+                  run.push(uniq[i]);
+                }
+                run.push(uniq[i+1]);
               } else {
-                break;
+                // Run broken
+                if (run.length > 2){
+                  break;
+                // Run reset
+                } else {
+                  run = [];
+                }
               }
             }
-            if (seqLength > 2){
-              console.log(seqLength, 'points awarded');
-              store.data.players[playerIDs.self].score += seqLength;
+            return run;
+          }
+
+          for (let i = 3; i < (store.data.play.length + 1); i++){
+            let seq = store.data.play.slice(-i);
+            console.log('seq', seq);
+            seq = store.data.play.map(x => x.rank);
+            console.log('seq', seq);
+            let run = findRuns(seq);
+            console.log('run', run);
+            if (run.length > 2){
+              console.log('We have a run');
+            } else {
+              console.log('There is no run');
+              break;
             }
           }
+
+          // if (store.data.play.length > 2){
+          //   let seqLength = 0;
+          //   let playSeq = store.data.play.map(x => x.rank);
+          //   for (let i = 3; i <= playSeq.length; i++){
+          //     let arr = playSeq.slice(-i);
+          //     console.log(i);
+          //     console.log(playSeq);
+          //     console.log(arr);
+          //     let max = Math.max(...arr);
+          //     let min = Math.min(...arr);
+          //     if (max - min + 1 == arr.length){
+          //       console.log('PLAY: sequence of', arr.length);
+          //       seqLength = arr.length;
+          //     } else {
+          //       //break;
+          //     }
+          //   }
+          //   if (seqLength > 2){
+          //     console.log(seqLength, 'points awarded');
+          //     store.data.players[playerIDs.self].score += seqLength;
+          //   }
+          // }
 
           // If opponent still has cards, they haven't passed, and the tally is not 31, switch turns
           if (store.data.players[playerIDs.opponent].hand.length > 0 && store.data.go !== playerIDs.opponent && store.data.tally < 31){
@@ -846,15 +1147,21 @@
 
           // If the tally is 31, end the round
           } else if (store.data.tally == 31){
-            console.log('31 round end');
-            roundEnd();
+            console.log('ROUND END: 31');
+            playEnd();
+
+          // If one player has passed, and the other no longer has a valid card to play
+
+        } else if (store.data.go !== null && !checkValidPlay(playerIDs.self)) {
+            console.log('ROUND END: EXTENDED GO');
+            playEnd();
 
           // If both players no longer have cards, end the play phase
           } else if (store.data.players[playerIDs.self].hand.length === 0 && store.data.players[playerIDs.opponent].hand.length === 0){
-            console.log('no cards phase end');
-            roundEnd();
+            console.log('ROUND END: NO CARDS LEFT');
+            store.data.players[playerIDs.self].score += 1;
+            playEnd();
           }
-
 
         // Warn player if it's not their turn
         } else if (store.data.turn == playerIDs.opponent) {
@@ -893,6 +1200,10 @@
       switchPlayer();
     }
 
+    if (event.target.id === 'reset'){
+      reset();
+    }
+
     // Player identification buttons event listeners
     if (event.target.classList.contains('identify')){
       playerIDs.self = Number(event.target.dataset.id);
@@ -902,7 +1213,7 @@
     }
 
     // Update server with new game state
-    updateServer(store.data);
+    // updateServer(store.data);
 
   })
 
