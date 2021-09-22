@@ -1,28 +1,83 @@
-#app {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
-  grid-template-rows: auto;
-  grid-template-areas:
-  "opponent opponent opponent"
-  "draw play crib"
-  "self self self";
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
-section {
-  border: 2px solid black;
-  padding: 1rem;
-  margin: 0.5rem;
-  border-radius: 1rem;
+:root {
+  --blue: #03b4ff;
+  --green: #00c68d;
+  --orange: #f48500;
+  --purple: #8477ff;
+  --gray-darker: #051c37;
+  --gray-med: #273b63;
+  --gray-light: #48598f;
+  --gray-lighter: #697eb7;
+}
+
+html {
+  background: rgb(30,51,75);
+  background: radial-gradient(circle, rgba(30,51,75,1) 0%, rgba(5,28,55,1) 100%);
+  width: 100%;
+  height: 100%;
+  font-family: "Barlow", sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: white;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+/* TYPOGRAPHY */
+
+h2 {
+  font-family: "Barlow", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0 0 1rem;
+  width: 100%;
+}
+
+h3 {
+  font-family: "Barlow", sans-serif;
+  margin-bottom: 0.5rem;
+}
+
+
+
+.orange .border, .border.orange { padding: 0 0 0.5rem; border-bottom: 2px solid var(--orange); }
+.green .border, .border.green { padding: 0 0 0.5rem; border-bottom: 2px solid var(--green); }
+.purple .border, .border.purple { padding: 0 0 0.5rem; border-bottom: 2px solid var(--purple); }
+
+#app {
+  display: grid;
+  grid-gap: 2.5rem;
+  grid-template-columns: 4fr 1fr;
+  grid-template-rows: auto auto auto 1fr auto;
+  grid-template-areas:
+  "header header"
+  "opponent log"
+  "play score"
+  "self score"
+  "footer footer";
+
+  padding: 2rem;
+  height: 100%;
 }
 
 section.active {
   border: 4px solid green;
-  background-color: lightgreen;
 }
 
 div > *:first-child {
   margin-top: 0;
 }
+
+
+/* WELCOME LOGIN */
 
 #welcome {
   position: fixed;
@@ -31,78 +86,404 @@ div > *:first-child {
   background-color: AliceBlue;
 }
 
-#opponent {
-  grid-area: opponent;
+
+header {
+  grid-area: header;
+
+  display: grid;
+  align-items: end;
+  grid-gap: 0.25rem;
+  grid-template-columns: 1fr auto auto auto 1fr;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+  "date date date date date"
+  "icons-self name-self vs name-opponent icons-opponent"
+  ". record-self . record-opponent .";
 }
 
-#draw {
-  grid-area: draw;
+header .date, header .record {
+  grid-area: date;
+
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--gray-lighter);
+  text-align: center;
+  margin: 0;
 }
+
+header .vs {
+  grid-area: vs;
+
+  font-size: 1.25rem;
+  color: var(--gray-light);
+  text-align: center;
+  margin: 0;
+}
+
+header .name.self { grid-area: name-self; }
+header .name.opponent { grid-area: name-opponent; }
+
+header .name {
+  font-size: 2rem;
+  text-align: center;
+  line-height: 1;
+  margin: 0;
+}
+
+header .icons.self { grid-area: icons-self; }
+header .icons.opponent { grid-area: icons-opponent; }
+
+header .icons {
+  grid-area: icons;
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 0.5rem;
+}
+
+header .icons.self {
+  justify-content: flex-end;
+}
+
+svg.turn, svg.dealer, svg.go {
+  height: 1.5rem;
+}
+
+header .record.self { grid-area: record-self; }
+header .record.opponent { grid-area: record-opponent; }
+
+
+/* PLAY SECTION */
 
 #play {
   grid-area: play;
+
+  display: grid;
+  grid-gap: 5rem;
+  grid-template-columns: auto auto 1fr;
+  grid-template-rows: auto;
+  grid-template-areas:
+  "deck starter play";
 }
 
-#play div {
-  border: 2px dashed grey;
-  margin: 0 0 0.5rem 0;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+#play .deck { grid-area: deck; }
+#play .starter { grid-area: starter; }
+
+#play .play {
+  grid-area: play;
+  display: grid;
+  grid-gap: 0.5rem;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+  "self header opponent"
+  "self tally opponent";
+
 }
 
-#crib {
-  grid-area: crib;
-  position: relative;
+#play .play h2 {
+  grid-area: header;
+  text-align: center;
+  width: auto;
+  margin: 0;
 }
 
+#play .self.orange, #play .opponent.orange { border-color: var(--orange); }
+#play .self.green, #play .opponent.green { border-color: var(--green); }
+
+#play .opponent, #play .self {
+  border-top: 2px solid;
+  margin-top: 1.625rem;
+  padding-top: 1rem;
+}
+
+#play .opponent {
+  grid-area: opponent;
+  border-right: 2px solid;
+  padding: 1rem 1rem 0 3rem;
+}
+
+#play .self {
+  grid-area: self;
+  border-left: 2px solid;
+  padding: 1rem 3rem 0 1rem;
+}
+
+#play .self .cards {
+  justify-content: flex-end;
+}
+
+#play .tally {
+  grid-area: tally;
+  align-self: center;
+}
+
+#play .tally p {
+  font-size: 3rem;
+  color: white;
+  margin: 0;
+}
+
+
+/* OPPONENT & SELF SECTIONS */
+
+#opponent { grid-area: opponent; }
 #self { grid-area: self; }
 
 #self, #opponent {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-column-gap: 5rem;
+  grid-row-gap: 0.5rem;
+  grid-template-columns: auto auto auto;
   grid-template-rows: auto;
   grid-template-areas:
-  "info info"
-  "hand discard"
-  "buttons buttons";
+  "hand discard crib";
 }
 
-#self .info, #opponent .info {grid-area: info; }
 #self .hand, #opponent .hand { grid-area: hand; }
+#self .crib, #opponent .crib { grid-area: crib; }
 #self .discard, #opponent .discard { grid-area: discard; }
-#self .buttons { grid-area: buttons; }
 
-#self .discard .card,
-#opponent .discard .card,
-#crib .card,
-#play .card {
-  margin-left: -5rem;
+#self .hand .header {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
-#self .discard .card:nth-of-type(1),
-#opponent .discard .card:nth-of-type(1),
-#crib .card:nth-of-type(1),
-#play .self .card:nth-of-type(1),
-#play .opponent .card:nth-of-type(1) {
-  margin-left: auto;
+#self .hand .header h2 {
+  width: auto;
+  margin: 0;
 }
 
-h2 {
-  font-family: "Bahnschrift Bold", "Helvetica Bold", "Arial Bold", sans-serif;
-  margin-top: 0;
+
+
+#log {
+  grid-area: log;
 }
 
-h3 {
-  font-family: "Bahnschrift Bold", "Helvetica Bold", "Arial Bold", sans-serif;
+#log ul::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+#log ul::-webkit-scrollbar-track {
+  background: var(--gray-med);
+  border-radius: 2rem;
+}
+#log ul::-webkit-scrollbar-thumb {
+  background-color: var(--gray-light) ;
+  border-radius: 2rem;
+}
+
+#log ul {
+  list-style: none;
+  padding: 0.5rem;
+  margin: 0;
+  max-height: 150px;
+  min-height: calc(135.7px + 1rem);
+  overflow-y: scroll;
+  background: var(--gray-med);
+  border-radius: 0.25rem;
+}
+
+#log li {
+  margin: 0 0 0.5rem;
+  padding: 0 0 0.5rem;
+  border-bottom: 2px dashed var(--gray-light);
+  font-size: 0.875rem;
+  font-weight: 400;
+  width: 95%;
+}
+
+#log ul > *:last-child {
+  border-bottom: none;
+  margin: 0;
+  padding: 0;
+}
+
+
+#score {
+  grid-area: score;
+  position: relative;
+  display: grid;
+  grid-gap: 0.5rem;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+  "board-self markers board-opponent"
+  "score-self markers score-opponent";
+  height: 100%;
+}
+
+#score .markers {
+  grid-area: markers;
+  display: grid;
+  grid-gap: 0.25rem;
+  grid-template-columns: auto;
+  grid-template-rows: repeat(37, 0.25rem);
+  height: 100%;
+}
+
+#score .markers p {
+  margin: 0;
+  grid-row: span 3;
+  text-align: center;
+  font-weight: 400;
+}
+
+#score .markers p.secondary {
+  color: var(--gray-lighter);
+}
+
+#score .board.self {
+  grid-area: board-self;
+}
+
+#score .board {
+  display: grid;
+  grid-gap: 0.25rem;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-rows: repeat(37, 0.25rem);
+  width: 5rem;
+  height: 100%;
+  margin: 0 auto;
+  direction: rtl;
+}
+
+#score .board div {
+  background: var(--gray-med);
+  height: 0.25rem;
+}
+
+#score .board div:nth-of-type(1){
+  grid-column: span 5;
+}
+
+#score .board.orange > div.is-colour {
+  background: var(--orange);
+}
+
+#score .board.green > div.is-colour {
+  background: var(--green);
+}
+
+#score .board hr {
+  grid-column: span 5;
+  width: 100%;
+  height: 1px;
+  margin: 0;
+}
+
+hr.primary {
+  border: 1px solid var(--gray-lighter);
+}
+
+hr.secondary {
+  border: 1px solid var(--gray-light);
+}
+
+#score .score {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+#score .score p:first-child {
+  font-size: 1.25rem;
   margin-bottom: 0.5rem;
+}
+
+#score .score p:last-child {
+  font-size: 2rem;
+  margin: 0;
+  line-height: 1;
+}
+
+
+
+footer {
+  grid-area: footer;
+}
+
+
+
+
+
+
+
+
+
+
+
+.buttons {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+button {
+  border: none;
+  background-color: var(--purple);
+  font-family: inherit;
+  text-transform: uppercase;
+  color: white;
+  padding: 0.3rem 0.75rem;
+  border-radius: 10rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+button:hover {
+  background-color: var(--blue);
+}
+
+button:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+
+.cards {
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 0.5rem;
+  min-height: calc(135.7px + 1rem);
+  min-width: calc(100px + 1rem);
+  background: var(--gray-med);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+}
+
+.cards.overlap {
+  gap: 0;
+}
+
+.cards.overlap .card {
+  margin-left: -4rem;
+}
+
+.cards.overlap .card:nth-child(1) {
+  margin-left: 0;
 }
 
 .card {
   width: 100px;
-  margin: 0.5rem;
 }
 
+#self .hand .card {
+  cursor: pointer;
+}
 
+#self .hand.is-disabled .card {
+  pointer-events: none;
+  cursor: default;
+  opacity: 0.3;
+}
+
+/* STATES */
 
 .is-hidden {
   display: none;
