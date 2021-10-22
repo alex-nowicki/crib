@@ -1,0 +1,32 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Tabs Example</title>
+  <link rel="stylesheet" href="css/tabs.css">
+</head>
+
+<body>
+
+  <div class="tabs">
+    <ul role="tablist">
+     <li role="presentation">
+        <a href="#step-1" role="tab" aria-controls="step-1" aria-selected="true" tab-index="0">Step 1</a>
+      </li>
+      <li role="presentation">
+        <a href="#step-2" role="tab" aria-controls="step-2" aria-selected="false"  tab-index="-1">Step 2</a>
+      </li>
+     </ul>
+    <div id="step-1" role="tabpanel" aria-labelledby="tab-login">
+      <p>... Content ...</p>
+    </div>
+    <div id="step-2" role="tabpanel" aria-labelledby="tab-signup" hidden="hidden">
+      <p>... Content ...<p>
+    </div>
+  </div>
+
+<script src="js/tabs.js"></script>
+
+</body>
+</html>

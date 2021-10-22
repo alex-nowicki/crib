@@ -1,0 +1,19 @@
+Player A is the dealer
+Player B cuts the deck, starter is ____
+
+Player B plays card...
+
+Round End
+
+Player A scores #pts for hand
+Player B scores #pts for hand
+Player A score #pts for crib
+
+Player B is the dealer
+Player B shuffles and deals
+
+Player B wins, final score is # to #
+
+
+
+

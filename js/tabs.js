@@ -68,6 +68,7 @@
     // If the url has no hash, bail
     if (window.location.hash.length < 1) return;
     let targetTab = document.querySelector(`[role="tab"][href*="${window.location.hash}"]`);
+    console.log(targetTab);
     toggleTab(targetTab);
   }
 
@@ -76,7 +77,10 @@
   // Inits & Event Listeners
   //
 
-  // loadHash();
+  // Hash change event listener
+  window.addEventListener('hashchange', function() {
+    loadHash();
+  })
 
   // Click event listener
   document.addEventListener('click', function(event){
