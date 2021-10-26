@@ -2,7 +2,7 @@
 // Imports
 //
 
-import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage, getDate, getPlayer, getGame, setPlayer, setGame, playersAPI, gamesAPI } from './main.js';
+import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage, login, signup, getDate, getProfileData, getTableData, createGame, setPlayer, setGame, playersAPI, gamesAPI } from './main.js';
 
 (function () {
 
@@ -40,18 +40,13 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
     data: {}
   })
 
-  let initProfile = function() {
+  let initProfile = function(data) {
 
-    let activeGames = [];
-    for (let i = 0; i < store.data.players[store.data.user.toLowerCase()].games.open.length; i++){
-      activeGames.push(getGame(store.data.players[store.data.user.toLowerCase()].games.open[i]));
-    }
-    console.log(activeGames);
-    let completedGames = [];
-    for (let i = 0; i < store.data.players[store.data.user.toLowerCase()].games.closed.length; i++){
-      completedGames.push(getGame(store.data.players[store.data.user.toLowerCase()].games.closed[i]));
-    }
-    console.log(completedGames);
+    store.data.players[store.data.user.toLowerCase()] = data.player;
+    store.data.state = 'profile';
+    console.log('STATE: Profile');
+    let activeGames = data.games.open;
+    let completedGames = data.games.closed;
 
     let userInfo = new Reef('#user-info', {
       store: store,
@@ -61,7 +56,6 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
         `;
       }
     })
-
 
     let profile = new Reef('main', {
       store: store,
@@ -80,8 +74,8 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
             </div>
             <div class="game-list">
               ${activeGames.map(function(game){
-                return `<a class="game-card" href="game.html?id=${game.id}" data-active ${game.players[game.turn].username == props.user ? 'data-turn' : ''}>
-                  <h3>${game.players[1].username} vs ${game.players[2].username}</h3>
+                return `<a class="game-card" href="game.html?id=${game.id}" data-active ${game.turn != null && game.players[game.turn].username == props.user ? 'data-turn' : ''}>
+                  <h3>${game.players[1].username != null ? `${game.players[1].username}` : '?'} vs ${game.players[2].username != null ? `${game.players[2].username}` : '?'}</h3>
                   <p>Game #${game.id}</p>
                   <p>Last Updated: ${game.date.updated}</p>
                 </a>`
@@ -106,6 +100,36 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
             <p>Longest Win Streak: ${props.players[props.user.toLowerCase()].longestWinStreak}</p>
             <p>Biggest Win Lead: ${props.players[props.user.toLowerCase()].biggestLead}</p>
           </section>
+          <section id="friends">
+            <h2>My Friends</h2>
+            <button type="button" id="invite-friend">Add Friend</button>
+            ${props.players[props.user.toLowerCase()].friends.accepted.map(function(friend){
+              return `<p>${friend}<p>`
+            }).join('')}
+          </section>
+          <section id="invites">
+            <h2>My Invitations</h2>
+            ${props.players[props.user.toLowerCase()].invites.map(function(invite, index){
+              return `<div class="invite" data-id="${index}" data-type="${invite.type}">
+                <p>${invite.date}</p>
+                <p>${invite.type == 'friend' ? `${invite.username} sent you a friend request` : `${invite.username} invited you to play a game`}</p>
+                <button type="button" class="invite-approve">Confirm</button>
+                <button type="button" class="invite-reject">Delete</button>
+              </div>`
+            }).join('')}
+            <div class="invite" data-type="friend">
+              <p>2021-07-10</p>
+              <p>Person sent you a friend request</p>
+              <button type="button" class="invite-approve">Confirm</button>
+              <button type="button" class="invite-reject">Delete</button>
+            </div>
+            <div class="invite" data-type="game">
+              <p>2021-05-20</p>
+              <p>Person invited you to play a game</p>
+              <button type="button" class="invite-approve">Confirm</button>
+              <button type="button" class="invite-reject">Delete</button>
+            </div>
+          </section>
           `;
       }
     })
@@ -120,30 +144,27 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
 	//
 
   store.data = data;
+  console.log(store.data);
 
   // Check local storage for saved username
   let user = checkLocalStorage();
 
   if (user) {
     store.data.user = user;
-    store.data.players[user.toLowerCase()] = getPlayer(user);
-    store.data.state = 'profile';
-    console.log('STATE: Profile');
-    initProfile();
+    getProfileData(store.data.user, 'load', initProfile);
   } else {
     dialog.classList.toggle('is-open');
   }
 
 
-  window.addEventListener('hashchange', function() {
-
-  })
+  // window.addEventListener('hashchange', function() {
+  //
+  // })
 
   // Click event listeners
   document.addEventListener('click', function(event){
 
     if (event.target.classList.contains('login-toggle')) {
-      console.log('firing');
       dialog.querySelector('#login').classList.toggle('is-active');
       dialog.querySelector('#signup').classList.toggle('is-active');
     }
@@ -151,44 +172,34 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
     // Login button event listener
     if (event.target.id === 'login-submit'){
       event.preventDefault()
-      let username = document.querySelector('#login-field').value;
-      if (getPlayer(username)){
-        initProfile();
-        store.data.players[username.toLowerCase()] = getPlayer(username);
+      login(document.querySelector('#login-field').value, function(username){
         store.data.user = username;
-        localStorage.setItem('user', username);
-        store.data.state = 'profile';
-        console.log('STATE: Profile');
+        getProfileData(username, 'load', initProfile);
         // Close login dialog
         dialog.classList.toggle('is-open');
-      } else {
-        console.log('Player not found');
-        // *Display warning to user
-      }
-
+      });
     }
 
     // Sign up button event listener
     if (event.target.id === 'signup-submit'){
       event.preventDefault()
-      let username = document.querySelector('#signup-field').value;
-      if (!getPlayer(username)){
-        let userData = playerFactory(username);
-        setPlayer(username.toLowerCase(), userData, true);
-        store.data.players[username.toLowerCase()] = userData;
+      let userData = signup(document.querySelector('#signup-field').value, function(username, userData){
         store.data.user = username;
-        localStorage.setItem('user', username);
-        store.data.state = 'profile';
-        console.log('STATE: Profile');
+        initProfile({
+          player: userData,
+          games: {
+            open: [],
+            closed: []
+          }
+        })
         // Close login dialog
         dialog.classList.toggle('is-open');
-      } else {
-        console.log('Username already in use');
-      }
+      });
     }
 
     if (event.target.id === 'logout') {
       clearLocalStorage();
+      window.location.reload();
     }
 
     if (event.target.classList.contains('filter-button')){
@@ -213,25 +224,44 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
 
     if (event.target.classList.contains('game-card')){
       let id = event.target.dataset.id;
-      store.data.game = getGame(id);
-      if (store.data.game.players[1].username == store.data.user){
-        user = 1;
-        opponent = 2;
-      } else {
-        user = 2;
-        opponent = 1;
-      }
-      store.data.players[opponent] = getPlayer(store.data.game.players[opponent].username);
-      store.data.state = 'game';
-      app.attach(table);
-      app.detach(lobby);
-      header.attach(tableInfo);
-      resetHash();
-      console.log('STATE: Game');
+      window.location.assign(`/game.html?id=${id}`)
     }
 
-    if (event.target.id === 'settings'){
-      document.querySelector('.settings-list').classList.toggle('is-visible');
+    if (event.target.id == 'new-game'){
+      // Need to get the name of the player they wish to challenge
+
+
+
+      createGame(store.data.user, store.data.players[store.data.user.toLowerCase()], function(player, game){
+        store.data.players[store.data.user] = player;
+        console.log(store.data.players[store.data.user].games);
+        // window.location.assign(`/game.html?id=${newGame.id}`);
+      });
+    }
+
+    if (event.target.id == 'invite-friend'){
+      // Need to get the name of the player they wish to add
+      let invite = {
+        date: getDate(),
+        username: store.data.user,
+        type: 'friend'
+      }
+      // Get the target player
+
+      // Update the target player
+
+      // Confirmation to user
+
+    }
+
+    if (event.target.classList.contains('invite-approve')){
+      // Process invite, for friends add to friend list, for games, add to game list
+
+    }
+
+    if (event.target.classList.contains('invite-reject')){
+      // Remove the invitation
+
     }
 
     // Update the app
