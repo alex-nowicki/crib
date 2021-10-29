@@ -2,7 +2,7 @@
 // Imports
 //
 
-import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage, login, signup, getDate, getProfileData, getTableData, setPlayer, setGame, playersAPI, gamesAPI } from './main.js';
+import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage, checkUsername, checkGame, login, signup, getDate, getProfileData, getTableData, setPlayer, setGame, playersAPI, gamesAPI } from './main.js';
 
 (function () {
 
@@ -571,7 +571,7 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
   let loadGame = function(){
     let urlSearchParams = new URLSearchParams(window.location.search);
     let params = Object.fromEntries(urlSearchParams.entries());
-    getTableData(params.id, 'load', initTable);
+    getTableData(params.id, true, initTable);
   }
 
   let switchPlayer = function() {
@@ -595,10 +595,10 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
     data: {}
   })
 
-  let initTable = function(data){
+  let initTable = function(game, players){
 
-    store.data.game = data.game;
-    store.data.players = data.players
+    store.data.game = game;
+    store.data.players = players
     console.log(store.data);
 
     let user;
@@ -666,15 +666,15 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
         ${props.players[props.game.players[opponent].username] == undefined ? '' : `
           <p class="record opponent">${props.players[props.game.players[opponent].username.toLowerCase()].wins} W / ${props.players[props.game.players[opponent].username.toLowerCase()].loses} L / ${props.players[props.game.players[opponent].username.toLowerCase()].skunks} S</p>
         `}
-        <div class="icons self">
-          <svg class="dealer ${props.game.dealer == user ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z" style="fill:#8477ff"/></svg>
-          <svg class="turn ${props.game.turn == user ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z" style="fill:#8477ff"/></svg>
-          <svg class="go ${props.game.go == user ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 29"><path d="M7.67 3.67c-3.2 0-5.11 1.72-5.11 5.47V20.3c0 3.74 1.91 5.5 5.11 5.5s5.12-1.76 5.12-5.5V16H8a.94.94 0 0 1-.86-1A.93.93 0 0 1 8 14h6.3a.85.85 0 0 1 .86.94v5.4c0 5.61-3.27 7.7-7.49 7.7S.19 25.91.19 20.3V9.14c0-5.58 3.27-7.67 7.45-7.67 4.61 0 7.52 2.63 7.52 6.23 0 .93-.47 1.22-1.19 1.22s-1.15-.25-1.18-.9c-.33-2.77-1.98-4.35-5.12-4.35ZM17.86 20.3V9.14c0-5.58 3.28-7.67 7.49-7.67s7.49 2.09 7.49 7.67V20.3c0 5.61-3.28 7.7-7.49 7.7s-7.49-2.09-7.49-7.7Zm12.6-11.16c0-3.75-1.91-5.47-5.11-5.47s-5.11 1.72-5.11 5.47V20.3c0 3.77 1.91 5.5 5.11 5.5s5.11-1.73 5.11-5.5Zm8.35 17.2A1.67 1.67 0 0 1 37.19 28a1.68 1.68 0 1 1 1.62-1.66ZM38.13 21a.91.91 0 0 1-1 .82.84.84 0 0 1-.94-.82c0-5.91-.43-12.71-.43-18.61a1.37 1.37 0 1 1 2.74 0c.03 5.92-.37 12.72-.37 18.61Z" style="fill:#8477ff"/></svg>
+        <div class="icons self flex-row">
+          <svg class="icon-dealer ${props.game.dealer == user ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg>
+          <svg class="icon-turn ${props.game.turn == user ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+          <svg class="icon-go ${props.game.go == user ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 29"><path d="M7.67 3.67c-3.2 0-5.11 1.72-5.11 5.47V20.3c0 3.74 1.91 5.5 5.11 5.5s5.12-1.76 5.12-5.5V16H8a.94.94 0 0 1-.86-1A.93.93 0 0 1 8 14h6.3a.85.85 0 0 1 .86.94v5.4c0 5.61-3.27 7.7-7.49 7.7S.19 25.91.19 20.3V9.14c0-5.58 3.27-7.67 7.45-7.67 4.61 0 7.52 2.63 7.52 6.23 0 .93-.47 1.22-1.19 1.22s-1.15-.25-1.18-.9c-.33-2.77-1.98-4.35-5.12-4.35ZM17.86 20.3V9.14c0-5.58 3.28-7.67 7.49-7.67s7.49 2.09 7.49 7.67V20.3c0 5.61-3.28 7.7-7.49 7.7s-7.49-2.09-7.49-7.7Zm12.6-11.16c0-3.75-1.91-5.47-5.11-5.47s-5.11 1.72-5.11 5.47V20.3c0 3.77 1.91 5.5 5.11 5.5s5.11-1.73 5.11-5.5Zm8.35 17.2A1.67 1.67 0 0 1 37.19 28a1.68 1.68 0 1 1 1.62-1.66ZM38.13 21a.91.91 0 0 1-1 .82.84.84 0 0 1-.94-.82c0-5.91-.43-12.71-.43-18.61a1.37 1.37 0 1 1 2.74 0c.03 5.92-.37 12.72-.37 18.61Z"/></svg>
         </div>
-        <div class="icons opponent">
-          <svg class="dealer ${props.game.dealer == opponent ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z" style="fill:#8477ff"/></svg>
-          <svg class="turn ${props.game.turn == opponent ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z" style="fill:#8477ff"/></svg>
-          <svg class="go ${props.game.go == opponent ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 29"><path d="M7.67 3.67c-3.2 0-5.11 1.72-5.11 5.47V20.3c0 3.74 1.91 5.5 5.11 5.5s5.12-1.76 5.12-5.5V16H8a.94.94 0 0 1-.86-1A.93.93 0 0 1 8 14h6.3a.85.85 0 0 1 .86.94v5.4c0 5.61-3.27 7.7-7.49 7.7S.19 25.91.19 20.3V9.14c0-5.58 3.27-7.67 7.45-7.67 4.61 0 7.52 2.63 7.52 6.23 0 .93-.47 1.22-1.19 1.22s-1.15-.25-1.18-.9c-.33-2.77-1.98-4.35-5.12-4.35ZM17.86 20.3V9.14c0-5.58 3.28-7.67 7.49-7.67s7.49 2.09 7.49 7.67V20.3c0 5.61-3.28 7.7-7.49 7.7s-7.49-2.09-7.49-7.7Zm12.6-11.16c0-3.75-1.91-5.47-5.11-5.47s-5.11 1.72-5.11 5.47V20.3c0 3.77 1.91 5.5 5.11 5.5s5.11-1.73 5.11-5.5Zm8.35 17.2A1.67 1.67 0 0 1 37.19 28a1.68 1.68 0 1 1 1.62-1.66ZM38.13 21a.91.91 0 0 1-1 .82.84.84 0 0 1-.94-.82c0-5.91-.43-12.71-.43-18.61a1.37 1.37 0 1 1 2.74 0c.03 5.92-.37 12.72-.37 18.61Z" style="fill:#8477ff"/></svg>
+        <div class="icons opponent flex-row">
+          <svg class="icon-dealer ${props.game.dealer == opponent ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg>
+          <svg class="icon-turn ${props.game.turn == opponent ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+          <svg class="icon-go ${props.game.go == opponent ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 29"><path d="M7.67 3.67c-3.2 0-5.11 1.72-5.11 5.47V20.3c0 3.74 1.91 5.5 5.11 5.5s5.12-1.76 5.12-5.5V16H8a.94.94 0 0 1-.86-1A.93.93 0 0 1 8 14h6.3a.85.85 0 0 1 .86.94v5.4c0 5.61-3.27 7.7-7.49 7.7S.19 25.91.19 20.3V9.14c0-5.58 3.27-7.67 7.45-7.67 4.61 0 7.52 2.63 7.52 6.23 0 .93-.47 1.22-1.19 1.22s-1.15-.25-1.18-.9c-.33-2.77-1.98-4.35-5.12-4.35ZM17.86 20.3V9.14c0-5.58 3.28-7.67 7.49-7.67s7.49 2.09 7.49 7.67V20.3c0 5.61-3.28 7.7-7.49 7.7s-7.49-2.09-7.49-7.7Zm12.6-11.16c0-3.75-1.91-5.47-5.11-5.47s-5.11 1.72-5.11 5.47V20.3c0 3.77 1.91 5.5 5.11 5.5s5.11-1.73 5.11-5.5Zm8.35 17.2A1.67 1.67 0 0 1 37.19 28a1.68 1.68 0 1 1 1.62-1.66ZM38.13 21a.91.91 0 0 1-1 .82.84.84 0 0 1-.94-.82c0-5.91-.43-12.71-.43-18.61a1.37 1.37 0 1 1 2.74 0c.03 5.92-.37 12.72-.37 18.61Z"/></svg>
         </div>`;
       },
       attachTo: table
@@ -686,7 +686,7 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
         return `
           <div class="hand">
             <h2 class="border">${props.game.players[opponent].username}'s Hand ${props.game.go == opponent ? ' "Go!"' : ''}</h2>
-            <div class="cards overlap">
+            <div class="cards overlap flex-row">
               ${props.game.players[opponent].hand.map(function(card){
                 return `<img class="card" src="images/cardBack.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
@@ -694,7 +694,7 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
           </div>
           <div class="discard">
             <h2 class="border">${props.game.players[opponent].username}'s Discard</h2>
-            <div class="cards overlap">
+            <div class="cards overlap flex-row">
               ${props.game.players[opponent].discard.map(function(card){
                 return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
@@ -702,7 +702,7 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
           </div>
           <div class="crib ${props.game.dealer == opponent ? '' : 'is-hidden'}">
             <h2 class="border">${props.game.players[opponent].username}'s Crib</h2>
-            <div class="cards overlap">
+            <div class="cards overlap flex-row">
               ${props.game.crib.map(function(card){
                 return `<img class="card" src="images/card${props.game.phase == 'count' ? card.id : "Back"}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
@@ -731,14 +731,14 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
           <div class="play">
             <h2>Play</h2>
             <div class="opponent ${props.game.players[opponent].colour}">
-              <div class="cards overlap">
+              <div class="cards overlap flex-row">
                 ${props.game.players[opponent].play.map(function(card){
                   return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
                 }).join('')}
               </div>
             </div>
             <div class="self ${props.game.players[user].colour}">
-              <div class="cards overlap">
+              <div class="cards overlap flex-row">
                 ${props.game.players[user].play.map(function(card){
                   return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
                 }).join('')}
@@ -757,9 +757,9 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
       template: function(props) {
         return `
           <div class="hand ${props.game.phase == 'starter' || (props.game.turn != user && props.game.phase == 'play') ? 'is-disabled' : ''}">
-            <div class="header border">
+            <div class="section-header border">
               <h2>My Hand</h2>
-              <div class="buttons">
+              <div class="button-group flex-row">
                 <button id="cut" ${(props.game.phase == 'new' || props.game.phase == 'starter') && props.game.dealer != user ? '' : 'disabled'}>Cut</button>
                 <button id="deal" ${props.game.phase == 'deal' && props.game.dealer == user ? '' : 'disabled'}>Shuffle & Deal</button>
                 <button id="go" ${props.game.phase == 'play' && props.game.turn == user ? '' : 'disabled'}>Go!</button>
@@ -774,7 +774,7 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
           </div>
           <div class="discard">
             <h2 class="border">My Discard</h2>
-            <div class="cards overlap">
+            <div class="cards overlap flex-row">
               ${props.game.players[user].discard.map(function(card){
                 return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
@@ -782,7 +782,7 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
           </div>
           <div class="crib ${props.game.dealer == user ? '' : 'is-hidden'}">
             <h2 class="border">My Crib</h2>
-            <div class="cards overlap">
+            <div class="cards overlap flex-row">
               ${props.game.crib.map(function(card){
                 return `<img class="card" src="images/card${props.game.phase == 'count' ? card.id : "Back"}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
@@ -797,29 +797,27 @@ import { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage
       template: function(props) {
         return `
           <h2 class="border purple">Score Log</h2>
-          <ul>
+          <ul class="lines scrollbar">
             ${props.game.log.map(function(item){
-              return `<li><span class="date">${item.date}</span>
-                <br>
-
-                ${item.phase == 'deal' ? `${item.player} is the dealer <svg class="dealer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z" style="fill:#8477ff"/></svg>` : ''}
-                ${item.phase == 'starter' ? `${item.player} cuts the deck, starter revealed` : ''}
+              return `<li><p class="date">${item.date}</p>
+                ${item.phase == 'deal' ? `<p>${item.player} is the dealer <svg class="icon-dealer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg></p>` : ''}
+                ${item.phase == 'starter' ? `<p>${item.player} cuts the deck, starter revealed</p>` : ''}
                 ${item.phase == 'play' ? `
                   ${item.value > 0 ? `${item.player}
-                    scores ${item.value}pts (${item.description.map(function(description){
+                    <p>scores ${item.value}pts (${item.description.map(function(description){
                         return `${description}`
-                      }).join(' / ')})
+                      }).join(' / ')})</p>
                   ` : `
                     ${item.description.map(function(description){
-                      return `${description}`
+                      return `<p>${description}</p>`
                     }).join('')}
                   `}
                 ` : ''}
-                ${item.phase == 'count' ? `${item.player}'s hand scores ${item.value}pts (
+                ${item.phase == 'count' ? `<p>${item.player}'s hand scores ${item.value}pts (
                     ${item.description.map(function(description){
                       return `${description}`
                     }).join(' / ')}
-                  )
+                  )</p>
                 ` : ''}
 
                 ${item.cards.other != null || item.cards.starter != null ? `

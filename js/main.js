@@ -328,7 +328,10 @@ const playerFactory = (username) => {
       "accepted": [],
       "blocked": []
     },
-    "invites": [],
+    "notifications": {
+      "unread": [],
+      "read": []
+    },
     "wins": 0,
     "loses": 0,
     "skunks": 0,
@@ -336,6 +339,17 @@ const playerFactory = (username) => {
     "highestHandScore": 0,
     "longestWinStreak": 0,
     "biggestLead": 0
+  }
+}
+
+const notificationFactory = (date, type, status, sender, recipient, content) => {
+  return {
+    "date": date,
+    "type": type,
+    "status": status,
+    "sender": sender,
+    "recipient": recipient,
+    "content": content
   }
 }
 
@@ -408,6 +422,16 @@ const gameFactory = (id, username, dateCreated) => {
    }
  }
 
+ let getDiffDate = function(date) {
+   let diff = new Date().getTime() - new Date(date).getTime();
+   let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+   diff = diff % (1000 * 60 * 60 * 24);
+   let hours = Math.floor(diff / (1000 * 60 * 60));
+   diff = diff % (1000 * 60 * 60);
+   let minutes = Math.floor(diff / (1000 * 60));
+   return `${days > 0 ? `${days} days ` : ''}${hours > 0 ? `${hours} hours ` : ''}${minutes} min`;
+ }
+
 /**
  * Check local storage for saved username, if found, skip login
  * @return {String}   - Stored username of returning player
@@ -430,30 +454,34 @@ let clearLocalStorage = function() {
   }
 }
 
-let login = async function(username, callback){
-  let checkUser = await getProfileData(username, 'check')
-  if (checkUser){
-    localStorage.setItem('user', username);
-    callback(username);
-  } else {
-    console.warn('User Does Not Exist');
-    // *Display warning to user
-  }
+let checkUsername = async function(username, callback) {
+  await fetch(`https://crib.nowicki.workers.dev?player=${username.toLowerCase()}`).then(function (response) {
+      if (response.ok) {
+          return response.json();
+      }
+      throw response.status;
+  }).then(function (data) {
+      console.log('User Exists', data);
+      callback(true);
+  }).catch(function (error) {
+      console.warn('User Does Not Exist', error);
+      callback(false);
+  });
 }
 
-let signup = async function(username, callback){
-  let checkUsername = await getProfileData(username, 'check');
-  console.log(checkUsername);
-  if (!checkUsername){
-    let userData = playerFactory(username);
-    console.log(userData);
-    await setPlayer(userData);
-    localStorage.setItem('user', username);
-    callback(username, userData);
-  } else {
-    console.warn('Username Already In Use');
-    // *Display warning to user
-  }
+let checkGame = async function(id, callback) {
+  await fetch(`https://crib.nowicki.workers.dev?game=${id}`).then(function (response) {
+      if (response.ok) {
+          return response.json();
+      }
+      throw response.status;
+  }).then(function (data) {
+      console.log('Game Exists', data);
+      callback(true);
+  }).catch(function (error) {
+      console.warn('Game Does Not Exist', error);
+      callback(false);
+  });
 }
 
 /**
@@ -461,31 +489,14 @@ let signup = async function(username, callback){
  * @param {String} username     - Username
  * @return {Object or Boolean}  - Returns profile object or false if none exists
  */
-let getProfileData = async function(username, purpose, callback) {
-  if (purpose == 'check'){
-    let check;
-    await fetch(`https://crib.nowicki.workers.dev?player=${username.toLowerCase()}`).then(function (response) {
-        if (response.ok) {
-            return response.json();
-        }
-        throw response.status;
-    }).then(function (data) {
-        console.log('User Exists', data);
-        check = true;
-    }).catch(function (error) {
-        console.warn('User Does Not Exist', error);
-        check = false;
-    });
-    return check;
+let getProfileData = async function(username, gamelist, callback) {
 
-  } else if (purpose == 'load'){
-    let apiData = {
-      player: {},
-      games: {
-        open: [],
-        closed: []
-      }
-    }
+    let player = {};
+    let games = {
+      open: [],
+      closed: []
+    };
+
     await fetch(`https://crib.nowicki.workers.dev?player=${username.toLowerCase()}`).then(function (response) {
         if (response.ok) {
             return response.json();
@@ -493,42 +504,47 @@ let getProfileData = async function(username, purpose, callback) {
         throw response.status;
     }).then(function (data) {
         console.log('Player Loaded', data);
-        apiData.player = data;
+        player = data;
     }).catch(function (error) {
         console.warn('Player Not Loaded', error);
         return false;
     });
 
-    console.log(apiData);
+    if (gamelist){
 
-    for (let i = 0; i < apiData.player.games.open.length; i++){
-      await fetch(`https://crib.nowicki.workers.dev?game=${apiData.player.games.open[i]}`).then(function (response) {
-          if (response.ok) {
-              return response.json();
-          }
-          throw response.status;
-      }).then(function (data) {
-          console.log('Game Loaded', data);
-          apiData.games.open.push(data);
-      }).catch(function (error) {
-          console.warn('Game Not Loaded', error);
-          return false;
-      });
+      for (let i = 0; i < player.games.open.length; i++){
+        await fetch(`https://crib.nowicki.workers.dev?game=${player.games.open[i]}`).then(function (response) {
+            if (response.ok) {
+                return response.json();
+            }
+            throw response.status;
+        }).then(function (data) {
+            console.log('Game Loaded', data);
+            games.open.push(data);
+        }).catch(function (error) {
+            console.warn('Game Not Loaded', error);
+            return false;
+        });
+      }
+
+      for (let i = 0; i < player.games.closed.length; i++){
+        await fetch(`https://crib.nowicki.workers.dev?game=${player.games.open[i]}`).then(function (response) {
+            if (response.ok) {
+                return response.json();
+            }
+            throw response.status;
+        }).then(function (data) {
+            console.log('Game Loaded', data);
+            games.closed.push(data);
+        }).catch(function (error) {
+            console.warn('Game Not Loaded', error);
+            return false;
+        });
+      }
+
     }
-
-    console.log(apiData);
-    callback(apiData);
-    return apiData;
-
-  }
-
-  // Local testing API
-  // if (playersAPI[username.toLowerCase()] !== null){
-  //   return playersAPI[username.toLowerCase()];
-  // } else {
-  //   console.log('ERROR: Player not found');
-  //   return false;
-  // }
+    callback(player, games);
+    // return apiData;
 }
 
 /**
@@ -536,28 +552,10 @@ let getProfileData = async function(username, purpose, callback) {
  * @param {String} id           - Game id
  * @return {Object or Boolean}  - Returns game data object or false if none exists
  */
-let getTableData = async function(id, purpose, callback) {
-  if (purpose == 'check'){
-    let check;
-    await fetch(`https://crib.nowicki.workers.dev?game=${id}`).then(function (response) {
-        if (response.ok) {
-            return response.json();
-        }
-        throw response.status;
-    }).then(function (data) {
-        console.log('Game Exists', data);
-        check = true;
-    }).catch(function (error) {
-        console.warn('Game Does Not Exist', error);
-        check = false;
-    });
-    return check;
+let getTableData = async function(id, playerlist, callback) {
+    let game = {};
+    let players = {};
 
-  } else if (purpose == 'load') {
-    let apiData = {
-      game: {},
-      players: {}
-    };
     await fetch(`https://crib.nowicki.workers.dev?game=${id}`).then(function (response) {
         if (response.ok) {
             return response.json();
@@ -565,54 +563,48 @@ let getTableData = async function(id, purpose, callback) {
         throw response.status;
     }).then(function (data) {
         console.log('Game Loaded', data);
-        apiData.game = data;
+        game = data;
     }).catch(function (error) {
         console.warn('Game Not Loaded', error);
         return false;
     });
 
-    if (apiData.game.players[1].username != null){
-      await fetch(`https://crib.nowicki.workers.dev?player=${apiData.game.players[1].username.toLowerCase()}`).then(function (response) {
-          if (response.ok) {
-              return response.json();
-          }
-          throw response.status;
-      }).then(function (data) {
-          console.log('Player 1 Loaded', data);
-          apiData.players[apiData.game.players[1].username.toLowerCase()] = data;
-      }).catch(function (error) {
-          console.warn('Player 1 Not Loaded', error);
-          return false;
-      });
+    if (playerlist){
+
+      if (game.players[1].username != null){
+        await fetch(`https://crib.nowicki.workers.dev?player=${game.players[1].username.toLowerCase()}`).then(function (response) {
+            if (response.ok) {
+                return response.json();
+            }
+            throw response.status;
+        }).then(function (data) {
+            console.log('Player 1 Loaded', data);
+            players[game.players[1].username.toLowerCase()] = data;
+        }).catch(function (error) {
+            console.warn('Player 1 Not Loaded', error);
+            return false;
+        });
+      }
+
+      if (game.players[2].username != null){
+        await fetch(`https://crib.nowicki.workers.dev?player=${game.players[2].username.toLowerCase()}`).then(function (response) {
+            if (response.ok) {
+                return response.json();
+            }
+            throw response.status;
+        }).then(function (data) {
+            console.log('Player 2 Loaded', data);
+            players[game.players[2].username.toLowerCase()] = data;
+        }).catch(function (error) {
+            console.warn('Player 2 Not Loaded', error);
+            return false;
+        });
+      }
+
     }
 
-    if (apiData.game.players[2].username != null){
-      await fetch(`https://crib.nowicki.workers.dev?player=${apiData.game.players[2].username.toLowerCase()}`).then(function (response) {
-          if (response.ok) {
-              return response.json();
-          }
-          throw response.status;
-      }).then(function (data) {
-          console.log('Player 2 Loaded', data);
-          apiData.players[apiData.game.players[2].username.toLowerCase()] = data;
-      }).catch(function (error) {
-          console.warn('Player 2 Not Loaded', error);
-          return false;
-      });
-    }
-
-    callback(apiData);
-    return apiData;
-  }
-
-  // Local testing API
-  // if (gamesAPI[id] !== null){
-  //   return gamesAPI[id];
-  // } else {
-  //   console.log('ERROR: Game not found');
-  //   return false;
-  // }
-
+    callback(game, players);
+    // return apiData;
 }
 
 let createGame = async function(username, player, callback){
@@ -624,18 +616,32 @@ let createGame = async function(username, player, callback){
     // Generate a random 9 digit game id
     id = Math.floor(100000000 + Math.random() * 900000000);
     // Check API to see if id is already in use, if so try again, otherwise break
-    let checkID = await getTableData(id, 'check');
-    if (checkID){
-      continue;
-    } else {
-      checking = false;
-    }
+    await checkGame(id, function(check){
+      if (!check){
+        checking = false;
+      }
+    });
   }
   let game = gameFactory(id, username, getDate());
   player.games.open.push(game.id);
   await setPlayer(player)
   await setGame(game);
   callback(player, game);
+}
+
+
+let sendRequest = async function(username, request, callback){
+  await getProfileData(username, false, function(player){
+    player.notifications.unread.unshift(request);
+    console.log(player);
+    setPlayer(player, function(updated){
+      if(updated){
+        callback(true);
+      } else {
+        callback(false);
+      }
+    });
+  })
 }
 
 
@@ -647,15 +653,10 @@ let createGame = async function(username, player, callback){
  * @param {Boolean} create      - Whether new player
  * @return {Object or Boolean}  - Returns game data object or false if none exists
  */
-let setPlayer = async function(data){
+let setPlayer = async function(data, callback){
   await fetch('https://crib.nowicki.workers.dev', {
     method: 'PUT',
     body: JSON.stringify(data),
-    // THIS WORKS (TESTED)
-    // body: JSON.stringify({
-    //     username: username,
-    //     data: data
-    // }),
     headers: {
         'Content-Type': 'application/json'
     }
@@ -666,8 +667,10 @@ let setPlayer = async function(data){
       throw response.status;
   }).then(function (data) {
       console.log('Player Updated', data);
+      callback(true);
   }).catch(function (error) {
       console.warn('Player Not Updated', error);
+      callback(false);
   });
 }
 
@@ -675,11 +678,6 @@ let setGame = async function(data){
   await fetch('https://crib.nowicki.workers.dev', {
     method: 'PUT',
     body: JSON.stringify(data),
-    // body: JSON.stringify({
-    //     id: 5,
-    //     spell: 'You shall not pass!',
-    //     pet: 'none'
-    // }),
     headers: {
         'Content-Type': 'application/json'
     }
@@ -902,4 +900,4 @@ const gamesAPI = {
 // Exports
 //
 
-export { cards, playerFactory, gameFactory, checkLocalStorage, clearLocalStorage, login, signup, getDate, getProfileData, getTableData, createGame, setPlayer, setGame, playersAPI, gamesAPI };
+export { cards, playerFactory, notificationFactory, gameFactory, checkLocalStorage, clearLocalStorage, checkUsername, checkGame, getDate, getDiffDate, getProfileData, getTableData, createGame, sendRequest, setPlayer, setGame, playersAPI, gamesAPI };
