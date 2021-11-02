@@ -69,7 +69,7 @@ body {
 h1 {
   font-size: 3rem;
   font-weight: 700;
-  margin: 0 0 2rem;
+  margin: 0 0 1.5rem;
 }
 
 h2 {
@@ -81,6 +81,8 @@ h2 {
 }
 
 h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
   text-transform: uppercase;
   margin: 0 0 0.5rem;
   line-height: 1;
@@ -98,20 +100,12 @@ p.small {
   line-height: 1;
 }
 
-/* ul > *:first-child {
+:is(ul > *, div > *):first-child {
   margin-top: 0;
 }
 
-ul > *:last-child {
+:is(ul > *, div > *):last-child {
   margin-bottom: 0;
-} */
-
-ul *:first-child {
-  margin-top: 0 !important;
-}
-
-ul *:last-child {
-  margin-bottom: 0 !important;
 }
 
 ul.lines {
@@ -230,7 +224,7 @@ a:hover {
   color: var(--blue);
 }
 
-button {
+button:not(.unstyled) {
   border: none;
   background: var(--purple);
   font-family: inherit;
@@ -244,22 +238,26 @@ button {
   align-items: center;
   justify-content: center;
   text-align: center;
+  user-select: none;
 }
 
 button.big {
+  font-size: 1.125rem;
+  font-weight: 500;
   padding: 0.5rem;
   height: 3rem;
   width: 100%;
   border-radius: 0.25rem;
-  font-size: 1.25rem;
 }
 
-button:hover {
+button:not(.unstyled):hover {
   background-color: var(--blue);
 }
 
 button:disabled {
-  opacity: 0.3;
+  background-color: var(--gray-300);
+  color: var(--gray-100);
+  /* opacity: 0.3; */
   pointer-events: none;
 }
 
@@ -278,28 +276,8 @@ button.filter.is-active {
   background: var(--gray-300);
   color: white;
   position: relative;
-  padding: 0.33rem 2rem 0.33rem 0.66rem;
+  padding: 0.33rem 0.66rem;
 }
-
-button.filter.is-active::before,
-button.filter.is-active::after {
-  content: "";
-  height: 1rem;
-  width: 2px;
-  background: white;
-  border-radius: 2rem;
-  position: absolute;
-  right: 1rem;
-}
-
-button.filter.is-active::before {
-  transform: rotate(45deg);
-}
-
-button.filter.is-active::after {
-  transform: rotate(-45deg);
-}
-
 
 
 /*
@@ -312,21 +290,21 @@ form {
 }
 
 label {
-  margin-bottom: 0.75rem;
-  text-transform: uppercase;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 400;
+  text-transform: uppercase;
   color: var(--gray-100);
+  margin-bottom: 0.75rem;
 }
 
 input {
-  background-color: white;
-  border-radius: 0.25rem;
-  padding: 0.5rem;
-  margin-bottom: 1rem;
+  font-size: 1rem;
   height: 3rem;
   width: 100%;
-  font-size: 1rem;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  background-color: white;
+  border-radius: 0.25rem;
 }
 
 
@@ -367,9 +345,9 @@ input {
 }
 
 .dialog p {
-  text-transform: uppercase;
   font-size: 1.25rem;
   font-weight: 400;
+  line-height: 1.2;
 }
 
 .dialog > div {
@@ -400,24 +378,6 @@ input {
 
 .dialog > div > *:last-child {
   margin-bottom: 0;
-}
-
-svg.dialog-close {
-  fill: none;
-  stroke: var(--purple);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 4px;
-
-  position: absolute;
-  top: 2rem;
-  right: 3rem;
-  height: 2rem;
-  cursor: pointer;
-}
-
-svg.dialog-close:hover {
-  stroke: var(--blue);
 }
 
 #login {
@@ -641,6 +601,17 @@ header .record.opponent { grid-area: record-opponent; }
 
 #games {
   grid-area: games;
+}
+
+button#new-game-open {
+  position: relative;
+}
+
+button#new-game-open svg {
+  fill: var(--gray-100);
+  position: absolute;
+  top: 0.625rem;
+  right: 1rem;
 }
 
 /* NOTIFICATIONS */
@@ -949,6 +920,13 @@ footer {
 }
 
 
+/*
+** MISC
+------------------------------*/
+
+svg {
+  pointer-events: none;
+}
 
 
 /*

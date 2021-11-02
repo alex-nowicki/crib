@@ -324,21 +324,21 @@ const playerFactory = (username) => {
       "open": [],
       "closed": []
     },
-    "friends": {
-      "accepted": [],
-      "blocked": []
-    },
+    "friends": [],
+    "blocked" : [],
     "notifications": {
       "unread": [],
       "read": []
     },
-    "wins": 0,
-    "loses": 0,
-    "skunks": 0,
-    "doubleSkunks": 0,
-    "highestHandScore": 0,
-    "longestWinStreak": 0,
-    "biggestLead": 0
+    "stats": {
+      "wins": 0,
+      "loses": 0,
+      "skunks": 0,
+      "doubleSkunks": 0,
+      "highestHandScore": 0,
+      "winStreak": 0,
+      "biggestLead": 0
+    }
   }
 }
 
@@ -353,7 +353,7 @@ const notificationFactory = (date, type, status, sender, recipient, content) => 
   }
 }
 
-const gameFactory = (id, username, dateCreated) => {
+const gameFactory = (id, player1, player2, dateCreated) => {
   // games.nextID ++;
   return {
     "id": id,
@@ -364,7 +364,7 @@ const gameFactory = (id, username, dateCreated) => {
     },
     "players": {
       1: {
-        "username": username,
+        "username": player1,
         "colour": "orange",
         "score": 0,
         "hand": [],
@@ -372,7 +372,7 @@ const gameFactory = (id, username, dateCreated) => {
         "discard": []
       },
       2: {
-        "username": null,
+        "username": player2,
         "colour": "green",
         "score": 0,
         "hand": [],
@@ -389,7 +389,8 @@ const gameFactory = (id, username, dateCreated) => {
     "turn": null,
     "go": null,
     "phase": "new",
-    "log": []
+    "log": [],
+    "winner": null
   }
 }
 
@@ -402,6 +403,66 @@ const gameFactory = (id, username, dateCreated) => {
 
 // Helper Functions
 
+
+let setObjectValue = function (obj, type, path, value){
+
+  /**
+	 * If the path is a string, convert it to an array
+	 * @param  {String|Array} path The path
+	 * @return {Array}             The path array
+	 */
+	let stringToPath = function (path) {
+		// If the path isn't a string, return it
+		if (typeof path !== 'string') return path;
+		// Create new array
+		let output = [];
+		// Split to an array with dot notation
+		path.split('.').forEach(function (item, index) {
+			// Split to an array with bracket notation
+			item.split(/\[([^}]+)\]/g).forEach(function (key) {
+				// Push to the new array
+				if (key.length > 0) {
+					output.push(key);
+				}
+			});
+		});
+		return output;
+	};
+
+	// Convert the path to an array if not already
+	path = stringToPath(path);
+
+  // Store the path length and the current place in the object
+  let length = path.length;
+  let current = obj;
+
+  // Loop through the path
+  path.forEach(function (key, index) {
+    // If last item in the loop, assign the value
+    if (index === length - 1){
+      if (type == 'replace'){
+        current[key] = value;
+      } else if (type == 'add'){
+        current[key].unshift(value);
+      } else if (type == 'remove'){
+        current[key].splice(current[key].indexOf(value), 1);
+      } else if (type == 'plus'){
+        current[key] += value;
+      }
+      console.log(current);
+    // Otherwise, update the current place in the object
+    } else {
+      // If the key doesn't exist, create it
+      if (!current[key]){
+        current[key] = {};
+      }
+      // Update the current place in the object
+      current = current[key];
+    }
+  });
+}
+
+
 /**
  * Return today's date
  * @param {Boolean} detailed - Include hours and minutes
@@ -410,7 +471,7 @@ const gameFactory = (id, username, dateCreated) => {
  let getDate = function(detailed) {
    let date = new Date();
    let day = String(date.getUTCDate());
-   let month = String(date.getUTCMonth());
+   let month = String(date.getUTCMonth() + 1);
    let year = String(date.getUTCFullYear());
    let hours = String(date.getUTCHours()).padStart(2, '0');
    let minutes = String(date.getUTCMinutes()).padStart(2, '0');
@@ -528,7 +589,7 @@ let getProfileData = async function(username, gamelist, callback) {
       }
 
       for (let i = 0; i < player.games.closed.length; i++){
-        await fetch(`https://crib.nowicki.workers.dev?game=${player.games.open[i]}`).then(function (response) {
+        await fetch(`https://crib.nowicki.workers.dev?game=${player.games.closed[i]}`).then(function (response) {
             if (response.ok) {
                 return response.json();
             }
@@ -607,8 +668,13 @@ let getTableData = async function(id, playerlist, callback) {
     // return apiData;
 }
 
-let createGame = async function(username, player, callback){
-
+/**
+ * Get, update and upload player profile data
+ * @param {String} player1 - Username of player 1
+ * @param {String} player2 - Username of player 2
+ * @callback callback - Returns game object
+ */
+let createGame = async function(player1, player2, callback){
   // Generate game id
   let id;
   let checking = true;
@@ -622,21 +688,31 @@ let createGame = async function(username, player, callback){
       }
     });
   }
-  let game = gameFactory(id, username, getDate());
-  player.games.open.push(game.id);
-  await setPlayer(player)
-  await setGame(game);
-  callback(player, game);
+  let game = gameFactory(id, player1, player2, getDate());
+  await setGame(game, function(created){
+    if(created){
+      console.log('New Game Created');
+    } else {
+      console.warn('New Game Not Created');
+    }
+  });
+  callback(game);
 }
 
-
-let sendRequest = async function(username, request, callback){
-  await getProfileData(username, false, function(player){
-    player.notifications.unread.unshift(request);
-    console.log(player);
-    setPlayer(player, function(updated){
-      if(updated){
-        callback(true);
+/**
+ * Get, update and upload player profile data
+ * @param {String} username - Player to update
+ * @param {Object} changes - Changes to be made
+ * @callback callback - Returns boolean and updated player object
+ */
+let updateProfileData = async function(username, changes, callback) {
+  await getProfileData(username, false, async function(player){
+    for (const elem of changes){
+      await setObjectValue(player, elem.type, elem.path, elem.value);
+    }
+    await setPlayer(player, function(updated){
+      if (updated){
+        callback(true, player);
       } else {
         callback(false);
       }
@@ -644,14 +720,31 @@ let sendRequest = async function(username, request, callback){
   })
 }
 
-
-
+/**
+ * Get, update and upload game data
+ * @param {String} id - Game to update
+ * @param {Object} changes - Changes to be made
+ * @callback callback - Returns boolean and updated game object
+ */
+let updateGameData = async function(id, changes, callback) {
+  await getTableData(id, false, async function(game){
+    for (const elem of changes){
+      await setObjectValue(game, elem.type, elem.path, elem.value);
+    }
+    await setGame(game, function(updated){
+      if (updated){
+        callback(true, game);
+      } else {
+        callback(false);
+      }
+    });
+  })
+}
 
 /**
  * Send updated player profile data to API
- * @param {String} data         - Player data object
- * @param {Boolean} create      - Whether new player
- * @return {Object or Boolean}  - Returns game data object or false if none exists
+ * @param {Object} data - Player data object
+ * @callback callback - Returns boolean
  */
 let setPlayer = async function(data, callback){
   await fetch('https://crib.nowicki.workers.dev', {
@@ -674,7 +767,12 @@ let setPlayer = async function(data, callback){
   });
 }
 
-let setGame = async function(data){
+/**
+ * Send updated game data to API
+ * @param {Object} data - Game data object
+ * @callback callback - Returns boolean
+ */
+let setGame = async function(data, callback){
   await fetch('https://crib.nowicki.workers.dev', {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -688,8 +786,10 @@ let setGame = async function(data){
       throw response.status;
   }).then(function (data) {
       console.log('Game Updated', data);
+      callback(true);
   }).catch(function (error) {
       console.warn('Game Not Updated', error);
+      callback(false);
   });
 }
 
@@ -700,199 +800,6 @@ let setGame = async function(data){
 // Inits & Event Listeners
 //
 
-// TEMPORARY TESTING FIX
-
-const playersAPI = {
-  "zelda": {
-    "username" : "Zelda",
-    "games": {
-      "open": [2,4],
-      "closed": [1]
-    },
-    "wins": 1,
-    "loses": 0,
-    "skunks": 0,
-    "doubleSkunks": 0,
-    "highestHandScore": 0,
-    "longestWinStreak": 0,
-    "biggestLead": 0
-  },
-  "link": {
-    "username" : "Link",
-    "games": {
-      "open": [2,3],
-      "closed": [1]
-    },
-    "wins": 0,
-    "loses": 1,
-    "skunks": 1,
-    "doubleSkunks": 0,
-    "highestHandScore": 0,
-    "longestWinStreak": 0,
-    "biggestLead": 0
-  },
-  "ganon": {
-    "username" : "Ganon",
-    "games": {
-      "open": [3,4],
-      "closed": []
-    },
-    "wins": 0,
-    "loses": 0,
-    "skunks": 0,
-    "doubleSkunks": 0,
-    "highestHandScore": 0,
-    "longestWinStreak": 0,
-    "biggestLead": 0
-  }
-};
-const gamesAPI = {
-  1: {
-    "id": 1,
-    "date": {
-      "created": getDate(),
-      "updated": getDate(true),
-      "completed": null
-    },
-    "players": {
-      1: {
-        "username": "Zelda",
-        "colour": "orange",
-        "score": 121,
-        "hand": [],
-        "play": [],
-        "discard": []
-      },
-      2: {
-        "username": "Link",
-        "colour": "green",
-        "score": 87,
-        "hand": [],
-        "play": [],
-        "discard": []
-      }
-    },
-    "deck": cards,
-    "crib": [],
-    "play": [],
-    "starter": {},
-    "tally": 0,
-    "dealer": null,
-    "turn": 1,
-    "go": null,
-    "phase": "new",
-    "log": []
-  },
-  2: {
-    "id": 2,
-    "date": {
-      "created": getDate(),
-      "updated": getDate(true),
-      "completed": null
-    },
-    "players": {
-      1: {
-        "username": "Link",
-        "colour": "orange",
-        "score": 0,
-        "hand": [],
-        "play": [],
-        "discard": []
-      },
-      2: {
-        "username": "Zelda",
-        "colour": "green",
-        "score": 0,
-        "hand": [],
-        "play": [],
-        "discard": []
-      }
-    },
-    "deck": cards,
-    "crib": [],
-    "play": [],
-    "starter": {},
-    "tally": 0,
-    "dealer": null,
-    "turn": 1,
-    "go": null,
-    "phase": "new",
-    "log": []
-  },
-  3: {
-    "id": 3,
-    "date": {
-      "created": getDate(),
-      "updated": getDate(true),
-      "completed": null
-    },
-    "players": {
-      1: {
-        "username": "Ganon",
-        "colour": "orange",
-        "score": 0,
-        "hand": [],
-        "play": [],
-        "discard": []
-      },
-      2: {
-        "username": "Link",
-        "colour": "green",
-        "score": 0,
-        "hand": [],
-        "play": [],
-        "discard": []
-      }
-    },
-    "deck": cards,
-    "crib": [],
-    "play": [],
-    "starter": {},
-    "tally": 0,
-    "dealer": null,
-    "turn": 2,
-    "go": null,
-    "phase": "new",
-    "log": []
-  },
-  4: {
-    "id": 4,
-    "date": {
-      "created": getDate(),
-      "updated": getDate(true),
-      "completed": null
-    },
-    "players": {
-      1: {
-        "username": "Zelda",
-        "colour": "orange",
-        "score": 0,
-        "hand": [],
-        "play": [],
-        "discard": []
-      },
-      2: {
-        "username": "Ganon",
-        "colour": "green",
-        "score": 0,
-        "hand": [],
-        "play": [],
-        "discard": []
-      }
-    },
-    "deck": cards,
-    "crib": [],
-    "play": [],
-    "starter": {},
-    "tally": 0,
-    "dealer": null,
-    "turn": 1,
-    "go": null,
-    "phase": "new",
-    "log": []
-  }
-};
-
 
 
 
@@ -900,4 +807,4 @@ const gamesAPI = {
 // Exports
 //
 
-export { cards, playerFactory, notificationFactory, gameFactory, checkLocalStorage, clearLocalStorage, checkUsername, checkGame, getDate, getDiffDate, getProfileData, getTableData, createGame, sendRequest, setPlayer, setGame, playersAPI, gamesAPI };
+export { cards, playerFactory, notificationFactory, gameFactory, checkLocalStorage, clearLocalStorage, checkUsername, checkGame, getDate, getDiffDate, getProfileData, getTableData, createGame, updateProfileData, updateGameData, setPlayer, setGame};
