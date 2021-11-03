@@ -482,7 +482,7 @@ svg.logo {
 
   display: grid;
   align-items: end;
-  grid-gap: 0.25rem;
+  grid-gap: 1rem;
   grid-template-columns: 1fr auto auto auto 1fr;
   grid-template-rows: auto auto auto;
   grid-template-areas:
@@ -521,7 +521,7 @@ header .name {
 }
 
 header .icons {
-
+  align-self: center;
 }
 
 header .icons.self { grid-area: icons-self; }
@@ -761,7 +761,7 @@ button#new-game-open svg {
 }
 
 #log ul.lines svg.icon-dealer {
-  height: 1rem;
+  height: 0.75rem;
   margin-left: 0.25rem
 }
 
@@ -795,10 +795,11 @@ button#new-game-open svg {
   grid-row: span 3;
   text-align: center;
   font-weight: 400;
+  color: var(--gray-100)
 }
 
 #score .markers p.secondary {
-  color: var(--gray-200);
+  color: var(--gray-300);
 }
 
 #score .board.self {
@@ -828,16 +829,18 @@ button#new-game-open svg {
 #score .board hr {
   grid-column: span 5;
   width: 100%;
-  height: 1px;
+  height: 2px;
   margin: 0;
+  border: none;
+  align-self: center;
 }
 
 hr.primary {
-  border: 1px solid var(--gray-200);
+  background: var(--gray-100);
 }
 
 hr.secondary {
-  border: 1px solid var(--gray-300);
+  background: var(--gray-300);
 }
 
 #score .score {
@@ -846,7 +849,7 @@ hr.secondary {
 }
 
 #score .score p:first-child {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   margin-bottom: 0.5rem;
 }
 
@@ -882,12 +885,12 @@ hr.secondary {
 .cards.mini {
   min-height: auto;
   min-width: auto;
-  padding: 0.5rem 0;
+  padding: 0.5rem 0 0;
 }
 
 .cards.mini .card {
   width: 2.5rem;
-  margin-left: -2rem;
+  margin-left: -1.75rem;
 }
 
 .card {

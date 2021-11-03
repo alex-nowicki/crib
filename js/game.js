@@ -14,7 +14,11 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     state: "login", // welcome, check, profile, game
     user: null,
     game: {},
-    players: {}
+    players: {},
+
+    // For switch player testing
+    userIndex: null,
+    oppoIndex: null
   }
 
 	//
@@ -140,28 +144,28 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     if (store.data.game.phase === "new"){
       // Reset play area
       console.log(store.data.game.players);
-      console.log(store.data.game.players[userIndex]);
-      store.data.game.players[userIndex].play = [];
-      store.data.game.players[oppoIndex].play = [];
+      console.log(store.data.game.players[store.data.userIndex]);
+      store.data.game.players[store.data.userIndex].play = [];
+      store.data.game.players[store.data.oppoIndex].play = [];
       // Create duplicate of deck to draw from
       let drawDeck = cards.slice();
       // Draw two random cards and push them to play area
       for (let i = 0; i < 2; i++){
         let randomNum = Math.floor(Math.random() * (drawDeck.length - 1));
         if (i == 0) {
-          store.data.game.players[userIndex].play.push(drawDeck[randomNum]);
+          store.data.game.players[store.data.userIndex].play.push(drawDeck[randomNum]);
         } else {
-          store.data.game.players[oppoIndex].play.push(drawDeck[randomNum]);
+          store.data.game.players[store.data.oppoIndex].play.push(drawDeck[randomNum]);
         }
         drawDeck.splice(randomNum, 1);
       }
       // Determine who has the lower rank, if a tie, bail
-      if (store.data.game.players[userIndex].play[0].rank < store.data.game.players[oppoIndex].play[0].rank){
-        store.data.game.dealer = userIndex;
-        store.data.game.turn = oppoIndex;
-      } else if (store.data.game.players[userIndex].play[0].rank > store.data.game.players[oppoIndex].play[0].rank) {
-        store.data.game.dealer = oppoIndex;
-        store.data.game.turn = userIndex;
+      if (store.data.game.players[store.data.userIndex].play[0].rank < store.data.game.players[store.data.oppoIndex].play[0].rank){
+        store.data.game.dealer = store.data.userIndex;
+        store.data.game.turn = store.data.oppoIndex;
+      } else if (store.data.game.players[store.data.userIndex].play[0].rank > store.data.game.players[store.data.oppoIndex].play[0].rank) {
+        store.data.game.dealer = store.data.oppoIndex;
+        store.data.game.turn = store.data.userIndex;
       } else {
         return;
       }
@@ -172,8 +176,10 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     // Determine the starter for the round
     } else if (store.data.game.phase === "starter"){
       let randomNum = Math.floor(Math.random() * (store.data.game.deck.length - 1));
-      store.data.game.starter = store.data.game.deck[randomNum];
-      store.data.game.deck.splice(randomNum, 1);
+      // store.data.game.starter = store.data.game.deck[randomNum];
+      // store.data.game.deck.splice(randomNum, 1);
+      store.data.game.starter = store.data.game.deck[0];
+      store.data.game.deck.splice(0, 1);
       newLog(store.data.game.players[store.data.game.turn].username, null, {starter: store.data.game.starter, other: null});
       // Score starter jack
       if (store.data.game.starter.rank === 11){
@@ -217,8 +223,8 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     }
 
     // Assign a hand to each player
-    store.data.game.players[userIndex].hand = hands[0];
-    store.data.game.players[oppoIndex].hand = hands[1];
+    store.data.game.players[store.data.userIndex].hand = hands[0];
+    store.data.game.players[store.data.oppoIndex].hand = hands[1];
 
     // Once the deal is complete, pass to the crib phase
     store.data.game.phase = 'crib';
@@ -231,19 +237,19 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
   let go = function() {
     if (store.data.game.go == null){
       // Check whether the player has a valid card to play, if so alert, and bail
-      if (checkValidPlay(userIndex)){
+      if (checkValidPlay(store.data.userIndex)){
         alert('You have a card you can play!');
         return;
       }
       // Assign the go
-      store.data.game.go = userIndex;
+      store.data.game.go = store.data.userIndex;
       // Switch the turn to the other player
-      store.data.game.turn = oppoIndex;
+      store.data.game.turn = store.data.oppoIndex;
       // Assign a point to the other player
-      store.data.game.players[oppoIndex].score += 1;
-      newLog(store.data.game.players[oppoIndex].username, ['Go!'], {starter: null, other: null}, 1);
+      store.data.game.players[store.data.oppoIndex].score += 1;
+      newLog(store.data.game.players[store.data.oppoIndex].username, ['Go!'], {starter: null, other: null}, 1);
       // Check whether opponent has a valid card to play, if so, bail, otherwise end of play
-      if (checkValidPlay(oppoIndex)){
+      if (checkValidPlay(store.data.oppoIndex)){
         return;
       } else {
         console.log('ROUND END: GO');
@@ -263,21 +269,21 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     store.data.game.go = null;
 
     // Move played cards to the discard, and reset the play area for each player
-    store.data.game.players[userIndex].play.forEach((card, i) => {
-      store.data.game.players[userIndex].discard.push(card);
+    store.data.game.players[store.data.userIndex].play.forEach((card, i) => {
+      store.data.game.players[store.data.userIndex].discard.push(card);
     });
-    store.data.game.players[userIndex].play = [];
-    store.data.game.players[oppoIndex].play.forEach((card, i) => {
-      store.data.game.players[oppoIndex].discard.push(card);
+    store.data.game.players[store.data.userIndex].play = [];
+    store.data.game.players[store.data.oppoIndex].play.forEach((card, i) => {
+      store.data.game.players[store.data.oppoIndex].discard.push(card);
     });
-    store.data.game.players[oppoIndex].play = [];
+    store.data.game.players[store.data.oppoIndex].play = [];
     // Reset the global play array
     store.data.game.play = [];
 
     // Check whether either player still has cards left in hand
-    if (store.data.game.players[userIndex].hand.length !== 0 || store.data.game.players[oppoIndex].hand.length !== 0){
+    if (store.data.game.players[store.data.userIndex].hand.length !== 0 || store.data.game.players[store.data.oppoIndex].hand.length !== 0){
       // Determine the first player for the next round
-      store.data.game.turn == userIndex ? store.data.game.turn = oppoIndex : store.data.game.turn = userIndex;
+      store.data.game.turn == store.data.userIndex ? store.data.game.turn = store.data.oppoIndex : store.data.game.turn = store.data.userIndex;
     } else {
       roundEnd();
     }
@@ -294,12 +300,12 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     store.data.game.go = null;
     store.data.game.phase = "count";
     // Score each hand and the crib
-    store.data.game.players[userIndex].score += scoreHand(store.data.game.players[userIndex].discard, store.data.game.players[userIndex].username);
-    store.data.game.players[oppoIndex].score += scoreHand(store.data.game.players[oppoIndex].discard, store.data.game.players[oppoIndex].username);
-    if (store.data.game.dealer == userIndex){
-      store.data.game.players[userIndex].score += scoreHand(store.data.game.crib, store.data.game.players[userIndex].username);
+    store.data.game.players[store.data.userIndex].score += scoreHand(store.data.game.players[store.data.userIndex].discard, store.data.game.players[store.data.userIndex].username);
+    store.data.game.players[store.data.oppoIndex].score += scoreHand(store.data.game.players[store.data.oppoIndex].discard, store.data.game.players[store.data.oppoIndex].username);
+    if (store.data.game.dealer == store.data.userIndex){
+      store.data.game.players[store.data.userIndex].score += scoreHand(store.data.game.crib, store.data.game.players[store.data.userIndex].username);
     } else {
-      store.data.game.players[oppoIndex].score += scoreHand(store.data.game.crib, store.data.game.players[oppoIndex].username);
+      store.data.game.players[store.data.oppoIndex].score += scoreHand(store.data.game.crib, store.data.game.players[store.data.oppoIndex].username);
     }
     // Pass on to the deal phase
     store.data.game.phase = 'deal';
@@ -534,10 +540,10 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
    * Reset the table, removing all cards from play, starter, crib and discard
    */
   let resetTable = function(){
-    store.data.game.players[userIndex].play = [];
-    store.data.game.players[oppoIndex].play = [];
-    store.data.game.players[userIndex].discard = [];
-    store.data.game.players[oppoIndex].discard = [];
+    store.data.game.players[store.data.userIndex].play = [];
+    store.data.game.players[store.data.oppoIndex].play = [];
+    store.data.game.players[store.data.userIndex].discard = [];
+    store.data.game.players[store.data.oppoIndex].discard = [];
     store.data.game.crib = [];
     store.data.game.starter = {};
   }
@@ -546,12 +552,12 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
    * Assign the new dealer
    */
   let switchDealer = function(){
-    if (store.data.game.dealer == userIndex){
-      store.data.game.dealer = oppoIndex;
-      store.data.game.turn = userIndex;
+    if (store.data.game.dealer == store.data.userIndex){
+      store.data.game.dealer = store.data.oppoIndex;
+      store.data.game.turn = store.data.userIndex;
     } else {
-      store.data.game.dealer = userIndex;
-      store.data.game.turn = oppoIndex;
+      store.data.game.dealer = store.data.userIndex;
+      store.data.game.turn = store.data.oppoIndex;
     }
   }
 
@@ -562,14 +568,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     let urlSearchParams = new URLSearchParams(window.location.search);
     let params = Object.fromEntries(urlSearchParams.entries());
     getTableData(params.id, true, initTable);
-  }
-
-  let switchPlayer = function() {
-    let index1 = userIndex;
-    let index2 = oppoIndex;
-    userIndex = index2;
-    oppoIndex = index1;
-    table.render();
   }
 
 
@@ -592,12 +590,14 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     console.log(store.data);
 
     if (store.data.game.players[1].username.toLowerCase() == store.data.user.toLowerCase()){
-      userIndex = 1;
-      oppoIndex = 2;
+      store.data.userIndex = 1;
+      store.data.oppoIndex = 2;
     } else {
-      userIndex = 2;
-      oppoIndex = 1;
+      store.data.userIndex = 2;
+      store.data.oppoIndex = 1;
     }
+
+
 
     store.data.state = 'game';
     console.log('STATE: Game');
@@ -607,8 +607,9 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       template: function(props) {
         return `
         <p>Game #${props.game.id}</p>
-        ${props.game.players[oppoIndex].username == null ? '<button type="button" id="invite">Invite Player</button>' : ''}
-        ${props.user ? `<button type="button" id="logout">Logout</button>` : ''}`;
+        <p>Logged in as ${props.user}</p>
+        <button type="button" id="logout">Logout</button>
+        `;
       }
     })
 
@@ -616,11 +617,12 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       store: store,
       template: function(props) {
         return `
-        <section id="opponent" class="${props.game.players[oppoIndex].colour}"></section>
+        <section id="opponent" class="${props.game.players[store.data.oppoIndex].colour}"></section>
         <section id="play"></section>
-        <section id="self" class="${props.game.players[userIndex].colour}"></section>
+        <section id="self" class="${props.game.players[store.data.userIndex].colour}"></section>
         <section id="log"></section>
-        <section id="score"></section>`;
+        <section id="score"></section>
+        `;
       }
     })
 
@@ -628,11 +630,11 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       store: store,
       template: function(props) {
         return `
-          #score .board.self > div:nth-last-of-type(-n+${props.game.players[userIndex].score}){
-            background: var(--${props.game.players[userIndex].colour});
+          #score .board.self > div:nth-last-of-type(-n+${props.game.players[store.data.userIndex].score}){
+            background: var(--${props.game.players[store.data.userIndex].colour});
           }
-          #score .board.opponent > div:nth-last-of-type(-n+${props.game.players[oppoIndex].score}){
-            background: var(--${props.game.players[oppoIndex].colour});
+          #score .board.opponent > div:nth-last-of-type(-n+${props.game.players[store.data.oppoIndex].score}){
+            background: var(--${props.game.players[store.data.oppoIndex].colour});
           }
         `
       },
@@ -645,23 +647,19 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
         return `
         <p class="date">Last Updated: ${props.game.date.updated}</p>
         <p class="vs">VS</p>
-        <p class="name self">${props.game.players[userIndex].username != null ? `${props.game.players[userIndex].username}` : 'Invite Pending'}</p>
-        <p class="name opponent">${props.game.players[oppoIndex].username != null ? `${props.game.players[oppoIndex].username}` : 'Invite Pending'}</p>
-        ${props.players[props.game.players[oppoIndex].username] == undefined ? '' : `
-          <p class="record self">${props.players[props.game.players[userIndex].username.toLowerCase()].wins} W / ${props.players[props.game.players[userIndex].username.toLowerCase()].loses} L / ${props.players[props.game.players[userIndex].username.toLowerCase()].skunks} S</p>
-        `}
-        ${props.players[props.game.players[oppoIndex].username] == undefined ? '' : `
-          <p class="record opponent">${props.players[props.game.players[oppoIndex].username.toLowerCase()].wins} W / ${props.players[props.game.players[oppoIndex].username.toLowerCase()].loses} L / ${props.players[props.game.players[oppoIndex].username.toLowerCase()].skunks} S</p>
-        `}
+        <p class="name self">${props.game.players[store.data.userIndex].username}</p>
+        <p class="name opponent">${props.game.players[store.data.oppoIndex].username}</p>
+        <p class="record self">${props.players[props.game.players[store.data.userIndex].username.toLowerCase()].stats.wins} W / ${props.players[props.game.players[store.data.userIndex].username.toLowerCase()].stats.loses} L / ${props.players[props.game.players[store.data.userIndex].username.toLowerCase()].stats.skunks} S</p>
+        <p class="record opponent">${props.players[props.game.players[store.data.oppoIndex].username.toLowerCase()].stats.wins} W / ${props.players[props.game.players[store.data.oppoIndex].username.toLowerCase()].stats.loses} L / ${props.players[props.game.players[store.data.oppoIndex].username.toLowerCase()].stats.skunks} S</p>
         <div class="icons self flex-row">
-          <svg class="icon-dealer ${props.game.dealer == userIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg>
-          <svg class="icon-turn ${props.game.turn == userIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
-          <svg class="icon-go ${props.game.go == userIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 29"><path d="M7.67 3.67c-3.2 0-5.11 1.72-5.11 5.47V20.3c0 3.74 1.91 5.5 5.11 5.5s5.12-1.76 5.12-5.5V16H8a.94.94 0 0 1-.86-1A.93.93 0 0 1 8 14h6.3a.85.85 0 0 1 .86.94v5.4c0 5.61-3.27 7.7-7.49 7.7S.19 25.91.19 20.3V9.14c0-5.58 3.27-7.67 7.45-7.67 4.61 0 7.52 2.63 7.52 6.23 0 .93-.47 1.22-1.19 1.22s-1.15-.25-1.18-.9c-.33-2.77-1.98-4.35-5.12-4.35ZM17.86 20.3V9.14c0-5.58 3.28-7.67 7.49-7.67s7.49 2.09 7.49 7.67V20.3c0 5.61-3.28 7.7-7.49 7.7s-7.49-2.09-7.49-7.7Zm12.6-11.16c0-3.75-1.91-5.47-5.11-5.47s-5.11 1.72-5.11 5.47V20.3c0 3.77 1.91 5.5 5.11 5.5s5.11-1.73 5.11-5.5Zm8.35 17.2A1.67 1.67 0 0 1 37.19 28a1.68 1.68 0 1 1 1.62-1.66ZM38.13 21a.91.91 0 0 1-1 .82.84.84 0 0 1-.94-.82c0-5.91-.43-12.71-.43-18.61a1.37 1.37 0 1 1 2.74 0c.03 5.92-.37 12.72-.37 18.61Z"/></svg>
+          <svg class="icon-dealer ${props.game.dealer == store.data.userIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg>
+          <svg class="icon-turn ${props.game.turn == store.data.userIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+          <svg class="icon-go ${props.game.go == store.data.userIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 29"><path d="M7.67 3.67c-3.2 0-5.11 1.72-5.11 5.47V20.3c0 3.74 1.91 5.5 5.11 5.5s5.12-1.76 5.12-5.5V16H8a.94.94 0 0 1-.86-1A.93.93 0 0 1 8 14h6.3a.85.85 0 0 1 .86.94v5.4c0 5.61-3.27 7.7-7.49 7.7S.19 25.91.19 20.3V9.14c0-5.58 3.27-7.67 7.45-7.67 4.61 0 7.52 2.63 7.52 6.23 0 .93-.47 1.22-1.19 1.22s-1.15-.25-1.18-.9c-.33-2.77-1.98-4.35-5.12-4.35ZM17.86 20.3V9.14c0-5.58 3.28-7.67 7.49-7.67s7.49 2.09 7.49 7.67V20.3c0 5.61-3.28 7.7-7.49 7.7s-7.49-2.09-7.49-7.7Zm12.6-11.16c0-3.75-1.91-5.47-5.11-5.47s-5.11 1.72-5.11 5.47V20.3c0 3.77 1.91 5.5 5.11 5.5s5.11-1.73 5.11-5.5Zm8.35 17.2A1.67 1.67 0 0 1 37.19 28a1.68 1.68 0 1 1 1.62-1.66ZM38.13 21a.91.91 0 0 1-1 .82.84.84 0 0 1-.94-.82c0-5.91-.43-12.71-.43-18.61a1.37 1.37 0 1 1 2.74 0c.03 5.92-.37 12.72-.37 18.61Z"/></svg>
         </div>
         <div class="icons opponent flex-row">
-          <svg class="icon-dealer ${props.game.dealer == oppoIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg>
-          <svg class="icon-turn ${props.game.turn == oppoIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
-          <svg class="icon-go ${props.game.go == oppoIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 29"><path d="M7.67 3.67c-3.2 0-5.11 1.72-5.11 5.47V20.3c0 3.74 1.91 5.5 5.11 5.5s5.12-1.76 5.12-5.5V16H8a.94.94 0 0 1-.86-1A.93.93 0 0 1 8 14h6.3a.85.85 0 0 1 .86.94v5.4c0 5.61-3.27 7.7-7.49 7.7S.19 25.91.19 20.3V9.14c0-5.58 3.27-7.67 7.45-7.67 4.61 0 7.52 2.63 7.52 6.23 0 .93-.47 1.22-1.19 1.22s-1.15-.25-1.18-.9c-.33-2.77-1.98-4.35-5.12-4.35ZM17.86 20.3V9.14c0-5.58 3.28-7.67 7.49-7.67s7.49 2.09 7.49 7.67V20.3c0 5.61-3.28 7.7-7.49 7.7s-7.49-2.09-7.49-7.7Zm12.6-11.16c0-3.75-1.91-5.47-5.11-5.47s-5.11 1.72-5.11 5.47V20.3c0 3.77 1.91 5.5 5.11 5.5s5.11-1.73 5.11-5.5Zm8.35 17.2A1.67 1.67 0 0 1 37.19 28a1.68 1.68 0 1 1 1.62-1.66ZM38.13 21a.91.91 0 0 1-1 .82.84.84 0 0 1-.94-.82c0-5.91-.43-12.71-.43-18.61a1.37 1.37 0 1 1 2.74 0c.03 5.92-.37 12.72-.37 18.61Z"/></svg>
+          <svg class="icon-dealer ${props.game.dealer == store.data.oppoIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg>
+          <svg class="icon-turn ${props.game.turn == store.data.oppoIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+          <svg class="icon-go ${props.game.go == store.data.oppoIndex ? '' : 'is-hidden'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 29"><path d="M7.67 3.67c-3.2 0-5.11 1.72-5.11 5.47V20.3c0 3.74 1.91 5.5 5.11 5.5s5.12-1.76 5.12-5.5V16H8a.94.94 0 0 1-.86-1A.93.93 0 0 1 8 14h6.3a.85.85 0 0 1 .86.94v5.4c0 5.61-3.27 7.7-7.49 7.7S.19 25.91.19 20.3V9.14c0-5.58 3.27-7.67 7.45-7.67 4.61 0 7.52 2.63 7.52 6.23 0 .93-.47 1.22-1.19 1.22s-1.15-.25-1.18-.9c-.33-2.77-1.98-4.35-5.12-4.35ZM17.86 20.3V9.14c0-5.58 3.28-7.67 7.49-7.67s7.49 2.09 7.49 7.67V20.3c0 5.61-3.28 7.7-7.49 7.7s-7.49-2.09-7.49-7.7Zm12.6-11.16c0-3.75-1.91-5.47-5.11-5.47s-5.11 1.72-5.11 5.47V20.3c0 3.77 1.91 5.5 5.11 5.5s5.11-1.73 5.11-5.5Zm8.35 17.2A1.67 1.67 0 0 1 37.19 28a1.68 1.68 0 1 1 1.62-1.66ZM38.13 21a.91.91 0 0 1-1 .82.84.84 0 0 1-.94-.82c0-5.91-.43-12.71-.43-18.61a1.37 1.37 0 1 1 2.74 0c.03 5.92-.37 12.72-.37 18.61Z"/></svg>
         </div>`;
       },
       attachTo: table
@@ -672,26 +670,26 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       template: function(props) {
         return `
           <div class="hand">
-            <h2 class="border">${props.game.players[oppoIndex].username}'s Hand ${props.game.go == oppoIndex ? ' "Go!"' : ''}</h2>
+            <h2 class="border">${props.game.players[store.data.oppoIndex].username}'s Hand ${props.game.go == store.data.oppoIndex ? ' "Go!"' : ''}</h2>
             <div class="cards overlap flex-row">
-              ${props.game.players[oppoIndex].hand.map(function(card){
+              ${props.game.players[store.data.oppoIndex].hand.map(function(card){
                 return `<img class="card" src="images/cardBack.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
             </div>
           </div>
           <div class="discard">
-            <h2 class="border">${props.game.players[oppoIndex].username}'s Discard</h2>
+            <h2 class="border">${props.game.players[store.data.oppoIndex].username}'s Discard</h2>
             <div class="cards overlap flex-row">
-              ${props.game.players[oppoIndex].discard.map(function(card){
+              ${props.game.players[store.data.oppoIndex].discard.map(function(card){
                 return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
             </div>
           </div>
-          <div class="crib ${props.game.dealer == oppoIndex ? '' : 'is-hidden'}">
-            <h2 class="border">${props.game.players[oppoIndex].username}'s Crib</h2>
+          <div class="crib ${props.game.dealer == store.data.oppoIndex ? '' : 'is-hidden'}">
+            <h2 class="border">${props.game.players[store.data.oppoIndex].username}'s Crib</h2>
             <div class="cards overlap flex-row">
               ${props.game.crib.map(function(card){
-                return `<img class="card" src="images/card${props.game.phase == 'count' ? card.id : "Back"}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
+                return `<img class="card" src="images/card${props.game.phase == 'count' || props.game.phase == 'deal' ? card.id : "Back"}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
             </div>
           </div>`;
@@ -712,21 +710,22 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
           <div class="starter">
             <h2>Starter</h2>
             <div class="cards">
-              ${Object.keys(props.game.starter).length === 0 ? '' : `<img class="card" src="images/card${props.game.starter.id}.png" data-id="${props.game.starter.id}" data-suit="${props.game.starter.suit}" data-rank="${props.game.starter.rank}" data-value="${props.game.starter.value}"/>`}
+              ${Object.keys(props.game.starter).length === 0 ? '' : `<img class="card" src="images/card${props.game.starter.id}.png" data-id="${props.game.starter.id}" data-suit="${props.game.starter.suit}" data-rank="${props.game.starter.rank}" data-value="${props.game.starter.value}"/>
+              ${props.game.starter.svg}`}
             </div>
           </div>
           <div class="play">
             <h2>Play</h2>
-            <div class="opponent ${props.game.players[oppoIndex].colour}">
+            <div class="opponent ${props.game.players[store.data.oppoIndex].colour}">
               <div class="cards overlap flex-row">
-                ${props.game.players[oppoIndex].play.map(function(card){
+                ${props.game.players[store.data.oppoIndex].play.map(function(card){
                   return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
                 }).join('')}
               </div>
             </div>
-            <div class="self ${props.game.players[userIndex].colour}">
+            <div class="self ${props.game.players[store.data.userIndex].colour}">
               <div class="cards overlap flex-row">
-                ${props.game.players[userIndex].play.map(function(card){
+                ${props.game.players[store.data.userIndex].play.map(function(card){
                   return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
                 }).join('')}
               </div>
@@ -743,18 +742,18 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       store: store,
       template: function(props) {
         return `
-          <div class="hand ${props.game.phase == 'starter' || (props.game.turn != userIndex && props.game.phase == 'play') ? 'is-disabled' : ''}">
+          <div class="hand ${props.game.phase == 'starter' || (props.game.turn != store.data.userIndex && props.game.phase == 'play') ? 'is-disabled' : ''}">
             <div class="section-header border flex-row">
               <h2>My Hand</h2>
               <div class="button-group flex-row">
-                <button id="cut" ${(props.game.phase == 'new' || props.game.phase == 'starter') && props.game.dealer != userIndex ? '' : 'disabled'}>Cut</button>
-                <button id="deal" ${props.game.phase == 'deal' && props.game.dealer == userIndex ? '' : 'disabled'}>Shuffle & Deal</button>
-                <button id="go" ${props.game.phase == 'play' && props.game.turn == userIndex ? '' : 'disabled'}>Go!</button>
+                <button id="cut" ${(props.game.phase == 'new' || props.game.phase == 'starter') && props.game.dealer != store.data.userIndex ? '' : 'disabled'}>Cut</button>
+                <button id="deal" ${props.game.phase == 'deal' && props.game.dealer == store.data.userIndex ? '' : 'disabled'}>Shuffle & Deal</button>
+                <button id="go" ${props.game.phase == 'play' && props.game.turn == store.data.userIndex ? '' : 'disabled'}>Go!</button>
                 <button id="switch">Switch</button>
               </div>
             </div>
-            <div class="cards">
-              ${props.game.players[userIndex].hand.map(function(card){
+            <div class="cards flex-row">
+              ${props.game.players[store.data.userIndex].hand.map(function(card){
                 return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
             </div>
@@ -762,12 +761,12 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
           <div class="discard">
             <h2 class="border">My Discard</h2>
             <div class="cards overlap flex-row">
-              ${props.game.players[userIndex].discard.map(function(card){
+              ${props.game.players[store.data.userIndex].discard.map(function(card){
                 return `<img class="card" src="images/card${card.id}.png" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>`
               }).join('')}
             </div>
           </div>
-          <div class="crib ${props.game.dealer == userIndex ? '' : 'is-hidden'}">
+          <div class="crib ${props.game.dealer == store.data.userIndex ? '' : 'is-hidden'}">
             <h2 class="border">My Crib</h2>
             <div class="cards overlap flex-row">
               ${props.game.crib.map(function(card){
@@ -785,29 +784,34 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
         return `
           <h2 class="border purple">Score Log</h2>
           <ul class="lines scrollbar">
-            ${props.game.log.map(function(item){
-              return `<li><p class="date">${item.date}</p>
-                ${item.phase == 'deal' ? `<p>${item.player} is the dealer <svg class="icon-dealer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg></p>` : ''}
-                ${item.phase == 'starter' ? `<p>${item.player} cuts the deck, starter revealed</p>` : ''}
+            ${props.game.log.map(function(item, index){
+              return `<li data-index="${index}">
+                <p class="date small">${item.date}</p>
+                ${item.phase == 'deal' ? `<p class="small">${item.player} is the dealer <svg class="icon-dealer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg></p>` : ''}
+                ${item.phase == 'starter' ? `<p class="small">${item.player} cuts the deck, starter revealed</p>` : ''}
                 ${item.phase == 'play' ? `
-                  ${item.value > 0 ? `${item.player}
-                    <p>scores ${item.value}pts (${item.description.map(function(description){
+                  ${item.value > 0 ? `
+                    <p class="small">${item.player} scores ${item.value}pts
+                      (${item.description.map(function(description){
                         return `${description}`
                       }).join(' / ')})</p>
                   ` : `
                     ${item.description.map(function(description){
-                      return `<p>${description}</p>`
+                      return `<p class="small">${description}</p>`
                     }).join('')}
                   `}
                 ` : ''}
-                ${item.phase == 'count' ? `<p>${item.player}'s hand scores ${item.value}pts (
-                    ${item.description.map(function(description){
-                      return `${description}`
-                    }).join(' / ')}
-                  )</p>
+                ${item.phase == 'count' ? `
+                  <p class="small">${item.player}'s hand scores
+                    ${item.value > 0 ? `
+                      ${item.value}pts
+                        (${item.description.map(function(description){
+                          return `${description}`
+                        }).join(' / ')})</p>
+                    ` : 'nothing'}
                 ` : ''}
 
-                ${item.cards.other != null || item.cards.starter != null ? `
+                ${(item.cards.other != null || item.cards.starter != null) && index < 7 ? `
                   <div class="cards mini">
                     ${item.cards.starter != null ? `<img class="card starter" src="images/card${item.cards.starter.id}.png"/>` : ''}
                     ${item.cards.other != null ? `
@@ -820,7 +824,9 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
               </li>`
             }).join('')}
-            <li>Game #${props.game.id} started on ${props.game.date.created}</li>
+            <li>
+              <p class="small">Game #${props.game.id} started on ${props.game.date.created}</p>
+            </li>
           </ul>
           `;
       },
@@ -831,7 +837,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       store: store,
       template: function(props) {
         return `
-          <div class="board self ${props.game.players[userIndex].colour}" style="--score: '-n+${props.game.players[userIndex].score}'">
+          <div class="board self ${props.game.players[store.data.userIndex].colour}">
           <div></div>
           <hr class="primary">
           <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
@@ -872,7 +878,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             <p class="secondary">20</p>
             <p class="secondary">10</p>
           </div>
-          <div class="board opponent ${props.game.players[oppoIndex].colour}" style="--score: '-n+${props.game.players[oppoIndex].score}'">
+          <div class="board opponent ${props.game.players[store.data.oppoIndex].colour}">
             <div></div>
             <hr class="primary">
             <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
@@ -900,12 +906,12 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
           </div>
           <div class="score self">
-            <p>${props.game.players[userIndex].username}</p>
-            <p>${props.game.players[userIndex].score}</p>
+            <p>${props.game.players[store.data.userIndex].username}</p>
+            <p>${props.game.players[store.data.userIndex].score}</p>
           </div>
           <div class="score opponent">
-            <p>${props.game.players[oppoIndex].username}</p>
-            <p>${props.game.players[oppoIndex].score}</p>
+            <p>${props.game.players[store.data.oppoIndex].username}</p>
+            <p>${props.game.players[store.data.oppoIndex].score}</p>
           </div>`;
       },
       attachTo: table
@@ -924,9 +930,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
   // Check local storage for saved username
   let user = checkLocalStorage();
-
-  let userIndex;
-  let oppoIndex;
 
   if (user) {
     store.data.user = user;
@@ -975,15 +978,13 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       if (store.data.game.phase === 'crib') {
 
         // Add selected card to the crib unless the player has 4 cards
-        if (store.data.game.players[userIndex].hand.length > 4) {
+        if (store.data.game.players[store.data.userIndex].hand.length > 4) {
           store.data.game.crib.push(cards[targetId-1]);
-          store.data.game.players[userIndex].hand.splice(store.data.game.players[userIndex].hand.findIndex(findCard), 1);
+          store.data.game.players[store.data.userIndex].hand.splice(store.data.game.players[store.data.userIndex].hand.findIndex(findCard), 1);
 
           // AI SELECTION
-          store.data.game.crib.push(store.data.game.players[oppoIndex].hand[0]);
-          store.data.game.players[oppoIndex].hand.splice(0, 1);
-
-
+          // store.data.game.crib.push(store.data.game.players[store.data.oppoIndex].hand[0]);
+          // store.data.game.players[store.data.oppoIndex].hand.splice(0, 1);
         }
 
         // If the crib is full, pass to the starter phase
@@ -994,18 +995,16 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       } else if (store.data.game.phase === 'play') {
 
         // Check whether it's the player's turn and the selected card is valid
-        if (store.data.game.turn == userIndex && (Number(targetCard.value) + store.data.game.tally) < 32){
-
-
+        if (store.data.game.turn == store.data.userIndex && (Number(targetCard.value) + store.data.game.tally) < 32){
 
           //Add the card to the play area and remove from hand
-          store.data.game.players[userIndex].play.push(cards[targetId-1]);
+          store.data.game.players[store.data.userIndex].play.push(cards[targetId-1]);
           store.data.game.play.push(cards[targetId-1]);
-          store.data.game.players[userIndex].hand.splice(store.data.game.players[userIndex].hand.findIndex(findCard), 1);
+          store.data.game.players[store.data.userIndex].hand.splice(store.data.game.players[store.data.userIndex].hand.findIndex(findCard), 1);
 
           // Start tracking info for the log
           let log = {
-            player: store.data.game.players[userIndex].username,
+            player: store.data.game.players[store.data.userIndex].username,
             description: [],
             cards: {
               starter: null,
@@ -1021,12 +1020,12 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
           // If tally equals 15 or 31, assign points
           if (store.data.game.tally == 15){
-            store.data.game.players[userIndex].score += 2;
+            store.data.game.players[store.data.userIndex].score += 2;
             log.description.push('Fifteen');
             log.value += 2;
             logCardCount = logCardMax;
           } else if (store.data.game.tally == 31) {
-            store.data.game.players[userIndex].score += 2;
+            store.data.game.players[store.data.userIndex].score += 2;
             log.description.push('Thirty-One');
             log.value += 2;
             logCardCount = logCardMax;
@@ -1036,20 +1035,20 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
           if (store.data.game.play.length > 1 && targetCard.rank == store.data.game.play[store.data.game.play.length - 2].rank){
             let type;
             console.log('PLAY: double');
-            store.data.game.players[userIndex].score += 2;
+            store.data.game.players[store.data.userIndex].score += 2;
             type = 'Double';
             log.value += 2;
             logCardCount = logCardCount < 2 ? logCardCount = 2 : logCardCount;
             console.l
             if (store.data.game.play.length > 2 && targetCard.rank == store.data.game.play[store.data.game.play.length - 3].rank){
               console.log('PLAY: triple');
-              store.data.game.players[userIndex].score += 4;
+              store.data.game.players[store.data.userIndex].score += 4;
               type = 'Triple';
               log.value += 4;
               logCardCount = logCardCount < 3 ? logCardCount = 3 : logCardCount;
               if (store.data.game.play.length > 3 && targetCard.rank == store.data.game.play[store.data.game.play.length - 4].rank){
                 console.log('PLAY: quadruple');
-                store.data.game.players[userIndex].score += 6;
+                store.data.game.players[store.data.userIndex].score += 6;
                 type = 'Quadruple';
                 log.value += 6;
                 logCardCount = logCardCount < 4 ? logCardCount = 4 : logCardCount;
@@ -1071,7 +1070,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
           if (runLength > 2) {
             console.log(`PLAY: ${runLength} card run`);
-            store.data.game.players[userIndex].score += runLength;
+            store.data.game.players[store.data.userIndex].score += runLength;
             log.description.push(`Run of ${runLength}`);
             log.value += runLength;
             logCardCount = logCardCount < runLength ? logCardCount = runLength : logCardCount;
@@ -1087,8 +1086,8 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
           }
 
           // If opponent still has cards, they haven't passed, and the tally is not 31, switch turns
-          if (store.data.game.players[oppoIndex].hand.length > 0 && store.data.game.go !== oppoIndex && store.data.game.tally < 31){
-            store.data.game.turn = oppoIndex;
+          if (store.data.game.players[store.data.oppoIndex].hand.length > 0 && store.data.game.go !== store.data.oppoIndex && store.data.game.tally < 31){
+            store.data.game.turn = store.data.oppoIndex;
 
           // If the tally is 31, end the round
           } else if (store.data.game.tally == 31){
@@ -1096,21 +1095,21 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             playEnd();
 
           // If one player has passed, and the other no longer has a valid card to play
-        } else if (store.data.game.go !== null && !checkValidPlay(userIndex)) {
+        } else if (store.data.game.go !== null && !checkValidPlay(store.data.userIndex)) {
             console.log('ROUND END: EXTENDED GO');
             playEnd();
 
           // If both players no longer have cards, end the play phase
-          } else if (store.data.game.players[userIndex].hand.length === 0 && store.data.game.players[oppoIndex].hand.length === 0){
+          } else if (store.data.game.players[store.data.userIndex].hand.length === 0 && store.data.game.players[store.data.oppoIndex].hand.length === 0){
             console.log('ROUND END: NO CARDS LEFT');
             // Assign the automatic Go! points
-            store.data.game.players[userIndex].score += 1;
-            newLog(store.data.game.players[userIndex].username, ['Go!'], {starter: null, other: null}, 1);
+            store.data.game.players[store.data.userIndex].score += 1;
+            newLog(store.data.game.players[store.data.userIndex].username, ['Go!'], {starter: null, other: null}, 1);
             playEnd();
           }
 
         // Warn player if it's not their turn
-        } else if (store.data.game.turn == oppoIndex) {
+        } else if (store.data.game.turn == store.data.oppoIndex) {
           alert("It's your opponent's turn to play");
 
         // Warn player if the selected card is not valid
@@ -1138,12 +1137,19 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       go();
     }
 
+    // TESTING
     if (event.target.id === 'switch'){
+      let switchPlayer = function(){
+        let index1 = store.data.userIndex;
+        let index2 = store.data.oppoIndex;
+        store.data.userIndex = index2;
+        store.data.oppoIndex = index1;
+      };
       switchPlayer();
     }
 
     // Check for end of game
-    if (store.data.game.players[userIndex].score == 121 || store.data.game.players[oppoIndex].score == 121){
+    if (store.data.game.players[store.data.userIndex].score == 121 || store.data.game.players[store.data.oppoIndex].score == 121){
       console.log('GAME END');
       gameEnd();
 
