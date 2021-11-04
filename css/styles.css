@@ -911,6 +911,16 @@ hr.secondary {
   opacity: 0.3;
 }
 
+.card svg {
+  display: block;
+  box-shadow: 0 0 0.5rem var(--gray-500);
+  border-radius: 4%;
+}
+
+.cards.mini svg {
+  box-shadow: 0 0 0.25rem var(--gray-500);
+}
+
 
 
 
