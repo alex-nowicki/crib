@@ -28,7 +28,19 @@
     <section id="user-info" class="flex-row"></section>
   </header>
 
-  <main id="table"></main>
+  <main id="table">
+    <section id="prompts">
+      <div id="instructions"></div>
+      <div class="alert reject flex-row is-hidden" data-type="go">
+        <svg class="icon-reject" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M19.88 9.12a1.24 1.24 0 0 1 0 1.76l-3.61 3.62 3.61 3.62a1.24 1.24 0 0 1 0 1.76 1.23 1.23 0 0 1-1.76 0l-3.62-3.61-3.62 3.61a1.23 1.23 0 0 1-1.76 0 1.24 1.24 0 0 1 0-1.76l3.61-3.62-3.61-3.62a1.24 1.24 0 0 1 1.76-1.76l3.62 3.61 3.62-3.61a1.24 1.24 0 0 1 1.76 0Zm8.12.62v9.52a2 2 0 0 1-.59 1.42l-6.73 6.73a2 2 0 0 1-1.42.59H9.74a2 2 0 0 1-1.42-.59l-6.73-6.73A2 2 0 0 1 1 19.26V9.74a2 2 0 0 1 .59-1.42l6.73-6.73A2 2 0 0 1 9.74 1h9.52a2 2 0 0 1 1.42.59l6.73 6.73A2 2 0 0 1 28 9.74Zm-2 0L19.26 3H9.74L3 9.74v9.52L9.74 26h9.52L26 19.26Z"/></svg>
+        <p>You must play the valid card in your hand!</p>
+      </div>
+      <div class="alert reject flex-row is-hidden" data-type="bust">
+        <svg class="icon-reject" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M19.88 9.12a1.24 1.24 0 0 1 0 1.76l-3.61 3.62 3.61 3.62a1.24 1.24 0 0 1 0 1.76 1.23 1.23 0 0 1-1.76 0l-3.62-3.61-3.62 3.61a1.23 1.23 0 0 1-1.76 0 1.24 1.24 0 0 1 0-1.76l3.61-3.62-3.61-3.62a1.24 1.24 0 0 1 1.76-1.76l3.62 3.61 3.62-3.61a1.24 1.24 0 0 1 1.76 0Zm8.12.62v9.52a2 2 0 0 1-.59 1.42l-6.73 6.73a2 2 0 0 1-1.42.59H9.74a2 2 0 0 1-1.42-.59l-6.73-6.73A2 2 0 0 1 1 19.26V9.74a2 2 0 0 1 .59-1.42l6.73-6.73A2 2 0 0 1 9.74 1h9.52a2 2 0 0 1 1.42.59l6.73 6.73A2 2 0 0 1 28 9.74Zm-2 0L19.26 3H9.74L3 9.74v9.52L9.74 26h9.52L26 19.26Z"/></svg>
+        <p>You can't exceed 31!</p>
+      </div>
+    </section>
+  </main>
 
   <footer></footer>
 

@@ -253,7 +253,10 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     if (obj.game.go == null){
       // Check whether the player has a valid card to play, if so alert, and bail
       if (checkValidPlay(obj, obj.userIndex)){
-        alert('You have a card you can play!');
+        // alert('You have a card you can play!');
+        document.querySelector('#prompts .alert[data-type="go"]').classList.remove('is-hidden');
+        console.log(document.querySelector('#prompts .alert[data-type="go"]'));
+        console.log('invalid go');
         return;
       }
       // Assign the go
@@ -639,6 +642,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
         <section id="self" class="${props.game.players[props.userIndex].colour}"></section>
         <section id="log"></section>
         <section id="score"></section>
+        <section id="prompts"></section>
         `;
       }
     })
@@ -682,6 +686,55 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       attachTo: table
     })
 
+    let prompts = new Reef('#prompts', {
+      store: store,
+      template: function(props) {
+        return `
+        <div class="instructions">
+
+          ${props.game.phase == 'new' ? `
+            ${props.userIndex == 2 ? `
+              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+              <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must cut the deck to determine the first dealer.</h3>
+          ` : ''}
+          ${props.game.phase == 'deal' ? `
+            ${props.game.dealer == props.userIndex ? `
+              <svg class="icon-dealer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg>
+              <h3>You are` : `<h3>${props.game.players[props.oppoIndex].username} is`} the dealer.</h3>
+            ${props.game.dealer == props.userIndex ? `
+              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+              <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must shuffle and deal the cards.</h3>
+          ` : ''}
+          ${props.game.phase == 'crib' ? `
+            ${props.game.turn == props.userIndex ? `
+              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+              <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must select two cards to add to ${props.game.dealer == props.userIndex ? 'your' : `their`} crib.</h3>
+          ` : ''}
+          ${props.game.phase == 'starter' ? `
+            ${props.game.turn == props.userIndex ? `
+              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+              <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must cut the deck to reveal the starter.</h3>
+          ` : ''}
+          ${props.game.phase == 'play' ? `
+            ${props.game.turn == props.userIndex ? `
+              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+              <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must select a card to play or Go!</h3>
+          ` : ''}
+        </div>
+        <div class="alert reject flex-row is-hidden" data-type="go">
+          <svg class="icon-reject" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M19.88 9.12a1.24 1.24 0 0 1 0 1.76l-3.61 3.62 3.61 3.62a1.24 1.24 0 0 1 0 1.76 1.23 1.23 0 0 1-1.76 0l-3.62-3.61-3.62 3.61a1.23 1.23 0 0 1-1.76 0 1.24 1.24 0 0 1 0-1.76l3.61-3.62-3.61-3.62a1.24 1.24 0 0 1 1.76-1.76l3.62 3.61 3.62-3.61a1.24 1.24 0 0 1 1.76 0Zm8.12.62v9.52a2 2 0 0 1-.59 1.42l-6.73 6.73a2 2 0 0 1-1.42.59H9.74a2 2 0 0 1-1.42-.59l-6.73-6.73A2 2 0 0 1 1 19.26V9.74a2 2 0 0 1 .59-1.42l6.73-6.73A2 2 0 0 1 9.74 1h9.52a2 2 0 0 1 1.42.59l6.73 6.73A2 2 0 0 1 28 9.74Zm-2 0L19.26 3H9.74L3 9.74v9.52L9.74 26h9.52L26 19.26Z"/></svg>
+          <p>You must play the valid card in your hand!</p>
+        </div>
+        <div class="alert reject flex-row is-hidden" data-type="bust">
+          <svg class="icon-reject" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M19.88 9.12a1.24 1.24 0 0 1 0 1.76l-3.61 3.62 3.61 3.62a1.24 1.24 0 0 1 0 1.76 1.23 1.23 0 0 1-1.76 0l-3.62-3.61-3.62 3.61a1.23 1.23 0 0 1-1.76 0 1.24 1.24 0 0 1 0-1.76l3.61-3.62-3.61-3.62a1.24 1.24 0 0 1 1.76-1.76l3.62 3.61 3.62-3.61a1.24 1.24 0 0 1 1.76 0Zm8.12.62v9.52a2 2 0 0 1-.59 1.42l-6.73 6.73a2 2 0 0 1-1.42.59H9.74a2 2 0 0 1-1.42-.59l-6.73-6.73A2 2 0 0 1 1 19.26V9.74a2 2 0 0 1 .59-1.42l6.73-6.73A2 2 0 0 1 9.74 1h9.52a2 2 0 0 1 1.42.59l6.73 6.73A2 2 0 0 1 28 9.74Zm-2 0L19.26 3H9.74L3 9.74v9.52L9.74 26h9.52L26 19.26Z"/></svg>
+          <p>You can't exceed 31!</p>
+        </div>
+
+        `;
+      },
+      attachTo: table
+    })
+
     let opponentArea = new Reef('#opponent', {
       store: store,
       template: function(props) {
@@ -690,7 +743,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             <h2 class="border">${props.game.players[props.oppoIndex].username}'s Hand ${props.game.go == props.oppoIndex ? ' "Go!"' : ''}</h2>
             <div class="cards overlap flex-row">
               ${props.game.players[props.oppoIndex].hand.map(function(card){
-                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>
+                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}">
                   ${cardBack}
                 </div>`
               }).join('')}
@@ -700,7 +753,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             <h2 class="border">${props.game.players[props.oppoIndex].username}'s Discard</h2>
             <div class="cards overlap flex-row">
               ${props.game.players[props.oppoIndex].discard.map(function(card){
-                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>
+                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}">
                   ${card.svg}
                 </div>`
               }).join('')}
@@ -710,7 +763,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             <h2 class="border">${props.game.players[props.oppoIndex].username}'s Crib</h2>
             <div class="cards overlap flex-row">
               ${props.game.crib.map(function(card){
-                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>
+                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}">
                   ${props.game.phase == 'count' || props.game.phase == 'deal' ? card.svg : cardBack}
                 </div>`
               }).join('')}
@@ -747,7 +800,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             <div class="opponent ${props.game.players[props.oppoIndex].colour}">
               <div class="cards overlap flex-row">
                 ${props.game.players[props.oppoIndex].play.map(function(card){
-                  return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>
+                  return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}">
                     ${card.svg}
                   </div>`
                 }).join('')}
@@ -756,7 +809,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             <div class="self ${props.game.players[props.userIndex].colour}">
               <div class="cards overlap flex-row">
                 ${props.game.players[props.userIndex].play.map(function(card){
-                  return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>
+                  return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}">
                     ${card.svg}
                   </div>`
                 }).join('')}
@@ -774,11 +827,11 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       store: store,
       template: function(props) {
         return `
-          <div class="hand ${props.game.phase == 'starter' || (props.game.turn != props.userIndex && props.game.phase == 'play') ? 'is-disabled' : ''}">
+          <div class="hand">
             <div class="section-header border flex-row">
               <h2>My Hand</h2>
               <div class="button-group flex-row">
-                <button id="cut" ${(props.game.phase == 'new' || props.game.phase == 'starter') && props.game.dealer != props.userIndex ? '' : 'disabled'}>Cut</button>
+                <button id="cut" ${(props.game.phase == 'new' && props.userIndex == 2) || (props.game.phase == 'starter' && props.game.dealer != props.userIndex) ? '' : 'disabled'}>Cut</button>
                 <button id="deal" ${props.game.phase == 'deal' && props.game.dealer == props.userIndex ? '' : 'disabled'}>Shuffle & Deal</button>
                 <button id="go" ${props.game.phase == 'play' && props.game.turn == props.userIndex ? '' : 'disabled'}>Go!</button>
                 <button id="switch">Switch</button>
@@ -786,8 +839,9 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             </div>
             <div class="cards flex-row">
               ${props.game.players[props.userIndex].hand.map(function(card){
-                return `<button type="button" class="card unstyled" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>
-                  ${card.svg}`
+                return `<button type="button" class="card unstyled" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}" ${props.game.turn != props.userIndex ? 'disabled' : ''}>
+                  ${card.svg}
+                </button>`
               }).join('')}
             </div>
           </div>
@@ -795,7 +849,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             <h2 class="border">My Discard</h2>
             <div class="cards overlap flex-row">
               ${props.game.players[props.userIndex].discard.map(function(card){
-                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>
+                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}">
                   ${card.svg}
                 </div>`
               }).join('')}
@@ -805,7 +859,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             <h2 class="border">My Crib</h2>
             <div class="cards overlap flex-row">
               ${props.game.crib.map(function(card){
-                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}"/>
+                return `<div class="card" data-id="${card.id}" data-suit="${card.suit}" data-rank="${card.rank}" data-value="${card.value}">
                   ${props.game.phase == 'count' || props.game.phase == 'deal' ? card.svg : cardBack}
                 </div>`
               }).join('')}
@@ -1014,6 +1068,31 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     console.log(store.data);
     console.log(storeCopy);
 
+    //
+    // Change Log
+    //
+
+    let updateUser = {
+      username: user,
+      changes: []
+    };
+
+    let updateOther = {
+      username: null,
+      changes: []
+    };
+
+    let updateGame = {
+      id: null,
+      changes: []
+    }
+
+    // Reset alerts
+    let alerts = document.querySelectorAll('#prompts .alert');
+    for (const alert of alerts){
+      alert.classList.add('is-hidden');
+    }
+
     if (event.target.id === 'logout') {
       clearLocalStorage();
       window.location.replace('/');
@@ -1032,19 +1111,27 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
       if (storeCopy.game.phase === 'crib') {
 
-        // Add selected card to the crib unless the player has 4 cards
-        if (storeCopy.game.players[storeCopy.userIndex].hand.length > 4) {
-          storeCopy.game.crib.push(cards[targetId-1]);
-          storeCopy.game.players[storeCopy.userIndex].hand.splice(storeCopy.game.players[storeCopy.userIndex].hand.findIndex(findCard), 1);
+        // Add selected card to the crib
+        storeCopy.game.crib.push(cards[targetId-1]);
+        storeCopy.game.players[storeCopy.userIndex].hand.splice(storeCopy.game.players[storeCopy.userIndex].hand.findIndex(findCard), 1);
 
-          // AI SELECTION
-          // storeCopy.game.crib.push(storeCopy.game.players[storeCopy.oppoIndex].hand[0]);
-          // storeCopy.game.players[storeCopy.oppoIndex].hand.splice(0, 1);
+        // If user has selected two cards, change turn
+        if (storeCopy.game.players[storeCopy.userIndex].hand.length == 4) {
+          if (storeCopy.game.turn == storeCopy.userIndex){
+            storeCopy.game.turn = storeCopy.oppoIndex;
+          } else {
+            storeCopy.game.turn = storeCopy.userIndex;
+          }
         }
 
-        // If the crib is full, pass to the starter phase
+        // If the crib is full, pass to the starter phase, and change turn
         if (storeCopy.game.crib.length === 4){
           storeCopy.game.phase = 'starter';
+          if (storeCopy.game.dealer == storeCopy.userIndex){
+            storeCopy.game.turn = storeCopy.oppoIndex;
+          } else {
+            storeCopy.game.turn = storeCopy.userIndex;
+          }
         }
 
       } else if (storeCopy.game.phase === 'play') {
@@ -1163,13 +1250,10 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
             playEnd(storeCopy);
           }
 
-        // Warn player if it's not their turn
-        } else if (storeCopy.game.turn == storeCopy.oppoIndex) {
-          alert("It's your opponent's turn to play");
-
         // Warn player if the selected card is not valid
         } else {
-          alert('Choose another card or go, this card would bust');
+          // alert('Choose another card or go, this card would bust');
+          document.querySelector('#prompts .alert[data-type="bust"]').classList.remove('is-hidden');
         }
 
       }

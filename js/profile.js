@@ -353,7 +353,10 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
   // Click event listeners
   document.addEventListener('click', function(event){
 
-    console.log(event);
+    // Create non-reactive store data object to make changes to
+    let storeCopy = store.dataCopy;
+    console.log(store.data);
+    console.log(storeCopy);
 
     //
     // Dialog
@@ -469,12 +472,12 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
       document.querySelector('#new-game .alert.attention').classList.add('is-hidden');
       let username = document.querySelector('#new-game-field').value;
 
-      let blockedLowerCase = store.data.user.blocked.map(name => name.toLowerCase());
+      let blockedLowerCase = storeCopy.user.blocked.map(name => name.toLowerCase());
 
       if (blockedLowerCase.includes(username.toLowerCase())){
         document.querySelector('#new-game .alert.reject').classList.remove('is-hidden');
 
-      } else if (store.data.user.username.toLowerCase() == username.toLowerCase()){
+      } else if (storeCopy.user.username.toLowerCase() == username.toLowerCase()){
         console.log('Self Invite');
         document.querySelector('#new-game .alert.attention p').innerHTML = "You can't invite yourself to a game. Nice try.";
         document.querySelector('#new-game .alert.attention').classList.remove('is-hidden');
@@ -485,7 +488,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 
             updateOther.username = username.toLowerCase();
 
-            let confirmation = notificationFactory(getDate(), 'game', 'sent', store.data.user.username, username);
+            let confirmation = notificationFactory(getDate(), 'game', 'sent', storeCopy.user.username, username);
 
             updateUser.changes.push({
               path: 'notifications.unread',
@@ -498,7 +501,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
             updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
               if (updated){
                 console.log('Profile Update Succesful - New Game - User')
-                store.data.user = player;
+                storeCopy.user = player;
               } else {
                 console.log('Profile Update Failed - New Game - User')
               }
@@ -507,7 +510,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 
 
             // Send the request to recipient
-            let request = notificationFactory(getDate(), 'game', 'received', store.data.user.username, username);
+            let request = notificationFactory(getDate(), 'game', 'received', storeCopy.user.username, username);
 
             updateOther.changes.push({
               path: 'notifications.unread',
@@ -552,8 +555,8 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
       document.querySelector('#add-friend .alert.attention').classList.add('is-hidden');
       let username = document.querySelector('#add-friend-field').value;
 
-      let friendsLowerCase = store.data.user.friends.map(name => name.toLowerCase());
-      let blockedLowerCase = store.data.user.blocked.map(name => name.toLowerCase());
+      let friendsLowerCase = storeCopy.user.friends.map(name => name.toLowerCase());
+      let blockedLowerCase = storeCopy.user.blocked.map(name => name.toLowerCase());
 
       if (friendsLowerCase.includes(username.toLowerCase())){
         document.querySelector('#add-friend .alert.attention p').innerHTML = 'You are already friends with this user';
@@ -562,7 +565,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
       } else if (blockedLowerCase.includes(username.toLowerCase())){
         document.querySelector('#add-friend .alert.reject').classList.remove('is-hidden');
 
-      } else if (store.data.user.username.toLowerCase() == username.toLowerCase()){
+      } else if (storeCopy.user.username.toLowerCase() == username.toLowerCase()){
         document.querySelector('#add-friend .alert.attention p').innerHTML = "It's important to love yourself, but not in the Friends list.";
         document.querySelector('#add-friend .alert.attention').classList.remove('is-hidden');
 
@@ -575,7 +578,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
             updateOther.username = username.toLowerCase();
 
             // Log request confirmation for sender
-            let confirmation = notificationFactory(getDate(), 'friend', 'sent', store.data.user.username, username)
+            let confirmation = notificationFactory(getDate(), 'friend', 'sent', storeCopy.user.username, username)
 
             // Log change to user profile
             updateUser.changes.push({
@@ -587,14 +590,14 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
             updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
               if (updated){
                 console.log('Profile Update Succesful - Add Friend - User');
-                store.data.user = player;
+                storeCopy.user = player;
               } else {
                 console.log('Profile Update Failed - Add Friend - User');
               }
             })
 
             // Send the request to recipient
-            let request = notificationFactory(getDate(), 'friend', 'received', store.data.user.username, username)
+            let request = notificationFactory(getDate(), 'friend', 'received', storeCopy.user.username, username)
 
             updateOther.changes.push({
               path: 'notifications.unread',
@@ -628,13 +631,13 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 
     if (event.target.classList.contains('friend-action')){
       let index = event.target.closest('.friend').dataset.index;
-      let friend = store.data.user.friends[index];
+      let friend = storeCopy.user.friends[index];
 
       updateOther.username = friend.toLowerCase();
 
       if (event.target.classList.contains('new-game')){
         // Log request confirmation for sender
-        let confirmation = notificationFactory(getDate(), 'game', 'sent', store.data.user.username, friend);
+        let confirmation = notificationFactory(getDate(), 'game', 'sent', storeCopy.user.username, friend);
 
         // Log change to user profile
         updateUser.changes.push({
@@ -644,7 +647,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
         })
 
         // Send the request to recipient
-        let request = notificationFactory(getDate(), 'game', 'received', store.data.user.username, friend);
+        let request = notificationFactory(getDate(), 'game', 'received', storeCopy.user.username, friend);
 
         updateOther.changes.push({
           path: 'notifications.unread',
@@ -653,7 +656,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
         })
 
       } else if (event.target.classList.contains('remove')){
-        store.data.user.friends.splice(index, 1);
+        storeCopy.user.friends.splice(index, 1);
 
         updateUser.changes.push({
           path: 'friends',
@@ -672,7 +675,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
       updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
         if (updated){
           console.log('Profile Update Successful - Friend Action - User')
-          store.data.user = player;
+          storeCopy.user = player;
         } else {
           console.log('Profile Update Failed - Friend Action - User')
         }
@@ -700,40 +703,40 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 
       if (event.target.classList.contains('clear-all')){
         // Move all non-request notifications to read
-        let length = store.data.user.notifications.unread.length;
+        let length = storeCopy.user.notifications.unread.length;
         console.log(length);
         for (let i = length - 1; i > -1; i--){
           console.log(i);
-          if (store.data.user.notifications.unread[i].type !== 'received'){
-            store.data.user.notifications.read.unshift(store.data.user.notifications.unread[i]);
-            store.data.user.notifications.unread.splice(i, 1);
+          if (storeCopy.user.notifications.unread[i].type !== 'received'){
+            storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
+            storeCopy.user.notifications.unread.splice(i, 1);
           }
         }
         // Log change to user profile
         updateUser.changes.push({
           path: 'notifications',
-          value: store.data.user.notifications,
+          value: storeCopy.user.notifications,
           type: 'replace'
         })
 
       } else {
         let index = event.target.closest('.notification').dataset.index;
-        let notification = store.data.user.notifications.unread[index];
+        let notification = storeCopy.user.notifications.unread[index];
 
         if (event.target.classList.contains('clear')) {
           // Move the notification to read
-          store.data.user.notifications.read.unshift(notification);
-          store.data.user.notifications.unread.splice(index, 1);
+          storeCopy.user.notifications.read.unshift(notification);
+          storeCopy.user.notifications.unread.splice(index, 1);
           // Log change to user profile
           updateUser.changes.push({
             path: 'notifications',
-            value: store.data.user.notifications,
+            value: storeCopy.user.notifications,
             type: 'replace'
           })
 
         } else {
           // Create reply notification object
-          let reply = notificationFactory(getDate(), notification.type, null, store.data.user.username, notification.sender);
+          let reply = notificationFactory(getDate(), notification.type, null, storeCopy.user.username, notification.sender);
           // Log sender username
           updateOther.username = notification.sender.toLowerCase();
 
@@ -765,20 +768,20 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
           }
 
           // Move notification and all duplicates to read
-          let length = store.data.user.notifications.unread.length;
+          let length = storeCopy.user.notifications.unread.length;
           for (let i = length - 1; i > -1; i--){
-            if (store.data.user.notifications.unread[i].sender == notification.sender
-              && store.data.user.notifications.unread[i].type == notification.type
-              && store.data.user.notifications.unread[i].status == notification.status) {
-              store.data.user.notifications.read.unshift(store.data.user.notifications.unread[i]);
-              store.data.user.notifications.unread.splice(i, 1);
+            if (storeCopy.user.notifications.unread[i].sender == notification.sender
+              && storeCopy.user.notifications.unread[i].type == notification.type
+              && storeCopy.user.notifications.unread[i].status == notification.status) {
+              storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
+              storeCopy.user.notifications.unread.splice(i, 1);
             }
           }
 
           // Log change to user profile
           updateUser.changes.push({
             path: 'notifications',
-            value: store.data.user.notifications,
+            value: storeCopy.user.notifications,
             type: 'replace'
           })
 
@@ -805,8 +808,8 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 
               updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
                 if (updated){
-                  store.data.user = player;
-                  store.data.games.open.push(game);
+                  storeCopy.user = player;
+                  storeCopy.games.open.push(game);
                   console.log('Profile Update Successful - Notification Action - User');
                 } else {
                   console.log('Profile Update Failed - Notification Action - User');
@@ -834,7 +837,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 
         updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
           if (updated){
-            store.data.user = player;
+            storeCopy.user = player;
             console.log('Profile Update Successful - Notification Action - User');
           } else {
             console.log('Profile Update Failed - Notification Action - User');
@@ -864,16 +867,16 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
       let index = event.target.dataset.index;
 
       if (type == 'leave'){
-        updateGame.id = store.data.games.open[index].id;
+        updateGame.id = storeCopy.games.open[index].id;
 
         let otherUsername;
 
-        if (store.data.games.open[index].players[1].username.toLowerCase() != store.data.user.username.toLowerCase()){
-          updateOther.username = store.data.games.open[index].players[1].username.toLowerCase();
-          otherUsername = store.data.games.open[index].players[2].username;
+        if (storeCopy.games.open[index].players[1].username.toLowerCase() != storeCopy.user.username.toLowerCase()){
+          updateOther.username = storeCopy.games.open[index].players[1].username.toLowerCase();
+          otherUsername = storeCopy.games.open[index].players[2].username;
         } else {
-          updateOther.username = store.data.games.open[index].players[2].username.toLowerCase();
-          otherUsername = store.data.games.open[index].players[1].username;
+          updateOther.username = storeCopy.games.open[index].players[2].username.toLowerCase();
+          otherUsername = storeCopy.games.open[index].players[1].username;
         }
 
         updateGame.changes.push({
@@ -936,7 +939,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
         // Notify the other player
 
         // Log request confirmation for sender
-        let confirmation = notificationFactory(getDate(), 'forfeit', 'sent', store.data.user.username, updateOther.username, updateGame.id);
+        let confirmation = notificationFactory(getDate(), 'forfeit', 'sent', storeCopy.user.username, updateOther.username, updateGame.id);
 
         // Log change to user profile
         updateUser.changes.push({
@@ -945,7 +948,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
           type: 'add'
         })
 
-        let notice = notificationFactory(getDate(), 'forfeit', 'received', store.data.user.username, updateOther.username, updateGame.id);
+        let notice = notificationFactory(getDate(), 'forfeit', 'received', storeCopy.user.username, updateOther.username, updateGame.id);
 
         updateOther.changes.push({
           path: 'notifications.unread',
@@ -954,7 +957,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
         })
 
       } else if (type == 'block'){
-        updateOther.username = store.data.user.notifications.unread[index].sender.toLowerCase();
+        updateOther.username = storeCopy.user.notifications.unread[index].sender.toLowerCase();
 
         // Add request sender to recipient blocked list
         updateUser.changes.push({
@@ -965,27 +968,27 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
         // Add request recipient to sender blocked list
         updateOther.changes.push({
           path: 'blocked',
-          value: store.data.user.username,
+          value: storeCopy.user.username,
           type: 'add'
         })
 
         // Remove all notifications from that user
-        let length = store.data.user.notifications.unread.length;
+        let length = storeCopy.user.notifications.unread.length;
         for (let i = length - 1; i > -1; i--){
-          if (store.data.user.notifications.unread[i].sender == updateOther.username){
-            store.data.user.notifications.read.unshift(store.data.user.notifications.unread[i]);
-            store.data.user.notifications.unread.splice(i, 1);
+          if (storeCopy.user.notifications.unread[i].sender == updateOther.username){
+            storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
+            storeCopy.user.notifications.unread.splice(i, 1);
           }
         }
         // Log change to user profile
         updateUser.changes.push({
           path: 'notifications',
-          value: store.data.user.notifications,
+          value: storeCopy.user.notifications,
           type: 'replace'
         })
 
         // Log request confirmation for sender
-        let confirmation = notificationFactory(getDate(), 'block', 'sent', store.data.user.username, updateOther.username);
+        let confirmation = notificationFactory(getDate(), 'block', 'sent', storeCopy.user.username, updateOther.username);
 
         // Log change to user profile
         updateUser.changes.push({
@@ -994,7 +997,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
           type: 'add'
         })
 
-        let notice = notificationFactory(getDate(), 'block', 'received', store.data.user.username, updateOther.username);
+        let notice = notificationFactory(getDate(), 'block', 'received', storeCopy.user.username, updateOther.username);
 
         updateOther.changes.push({
           path: 'notifications.unread',
@@ -1013,30 +1016,30 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
       if (updateGame.id != null){
         updateGameData(updateGame.id, updateGame.changes, function(updated, game){
           if (updated){
-            console.log('Game Update Successful - Confirm Action')
-            store.data.games.open.splice(index, 1);
-            store.data.games.closed.unshift(game);
+            console.log('Game Update Successful - Confirm Action');
+            storeCopy.games.open.splice(index, 1);
+            storeCopy.games.closed.unshift(game);
           } else {
-            console.warn('Game Update Failed - Confirm Action')
+            console.warn('Game Update Failed - Confirm Action');
           }
         })
       }
 
       updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
         if (updated){
-          console.log('Profile Update Successful - Confirm Action - User')
-          store.data.user = player;
+          console.log('Profile Update Successful - Confirm Action - User');
+          // storeCopy.user = player;
         } else {
-          console.warn('Profile Update Failed - Confirm Action - User')
+          console.warn('Profile Update Failed - Confirm Action - User');
         }
       })
 
       updateProfileData(updateOther.username, updateOther.changes, function(updated){
         if (updated){
-          console.log('Profile Update Successful - Confirm Action - Other')
+          console.log('Profile Update Successful - Confirm Action - Other');
         } else {
           // Report error
-          console.warn('Profile Update Failed - Confirm Action - Other')
+          console.warn('Profile Update Failed - Confirm Action - Other');
         }
       });
 
@@ -1050,7 +1053,10 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 
 
 
-    // Update the app
+    // Update the app THIS WILL UPDATE PRIOR TO UPDATE FUNCTION, FIX
+    console.log(store.data);
+    console.log(storeCopy);
+    store.data = storeCopy;
 
     // Update server with new game state
 
