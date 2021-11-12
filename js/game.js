@@ -11,7 +11,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 	//
 
   const data = {
-    state: "login", // welcome, check, profile, game
     user: null,
     game: {},
     players: {},
@@ -616,11 +615,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       store.data.userIndex = 2;
       store.data.oppoIndex = 1;
     }
-
-
-
-    store.data.state = 'game';
-    console.log('STATE: Game');
 
     let userInfo = new Reef('#user-info', {
       store: store,
@@ -1293,16 +1287,18 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       gameEnd(storeCopy);
     }
 
-    // Update the app
-    storeCopy.game.date.updated = getDate(true);
-
-    console.log(store.data);
-    console.log(storeCopy);
-    store.data = storeCopy;
-
-
-    // Update server with new game state
-
+    // Update server with new game state and update UI
+    if (updateUser.changes.length > 0 || updateOther.changes.length > 0 || updateGame.changes.length > 0){
+      storeCopy.game.date.updated = getDate(true);
+      updateData(updateUser, updateOther, updateGame, function(type, data){
+        if (type == 'game'){
+          store.data.game = data;
+          console.log(store.data);
+          console.log(storeCopy);
+          store.data = storeCopy;
+        }
+      })
+    }
 
   })
 

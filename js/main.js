@@ -614,6 +614,8 @@ const gameFactory = (id, player1, player2, dateCreated) => {
 
 let setObjectValue = function (obj, type, path, value){
 
+  console.log(obj);
+
   /**
 	 * If the path is a string, convert it to an array
 	 * @param  {String|Array} path The path
@@ -657,7 +659,6 @@ let setObjectValue = function (obj, type, path, value){
       } else if (type == 'plus'){
         current[key] += value;
       }
-      console.log(current);
     // Otherwise, update the current place in the object
     } else {
       // If the key doesn't exist, create it
@@ -668,6 +669,9 @@ let setObjectValue = function (obj, type, path, value){
       current = current[key];
     }
   });
+
+  console.log(obj);
+
 }
 
 
@@ -723,157 +727,89 @@ let clearLocalStorage = function() {
   }
 }
 
-let checkUsername = async function(username, callback) {
-  await fetch(`https://crib.nowicki.workers.dev?player=${username.toLowerCase()}`).then(function (response) {
-      if (response.ok) {
-          return response.json();
-      }
-      throw response.status;
-  }).then(function (data) {
-      console.log('User Exists', data);
-      callback(true);
-  }).catch(function (error) {
-      console.warn('User Does Not Exist', error);
-      callback(false);
-  });
+let checkUsername = async function(username) {
+  let response = await fetch(`https://crib.nowicki.workers.dev?player=${username.toLowerCase()}`);
+  return response.ok;
 }
 
-let checkGame = async function(id, callback) {
-  await fetch(`https://crib.nowicki.workers.dev?game=${id}`).then(function (response) {
-      if (response.ok) {
-          return response.json();
-      }
-      throw response.status;
-  }).then(function (data) {
-      console.log('Game Exists', data);
-      callback(true);
-  }).catch(function (error) {
-      console.warn('Game Does Not Exist', error);
-      callback(false);
-  });
+let checkGame = async function(id) {
+  let response = await fetch(`https://crib.nowicki.workers.dev?game=${id}`);
+  return response.ok;
 }
 
 /**
  * Get player profile from API
  * @param {String} username     - Username
- * @return {Object or Boolean}  - Returns profile object or false if none exists
+ * @return {Object or Boolean}  - Returns profile object or status if fetch fails
  */
-let getProfileData = async function(username, gamelist, callback) {
-
-    let player = {};
-    let games = {
-      open: [],
-      closed: []
-    };
-
-    await fetch(`https://crib.nowicki.workers.dev?player=${username.toLowerCase()}`).then(function (response) {
-        if (response.ok) {
-            return response.json();
-        }
-        throw response.status;
-    }).then(function (data) {
-        console.log('Player Loaded', data);
-        player = data;
-    }).catch(function (error) {
-        console.warn('Player Not Loaded', error);
-        return false;
-    });
-
-    if (gamelist){
-
-      for (let i = 0; i < player.games.open.length; i++){
-        await fetch(`https://crib.nowicki.workers.dev?game=${player.games.open[i]}`).then(function (response) {
-            if (response.ok) {
-                return response.json();
-            }
-            throw response.status;
-        }).then(function (data) {
-            console.log('Game Loaded', data);
-            games.open.push(data);
-        }).catch(function (error) {
-            console.warn('Game Not Loaded', error);
-            return false;
-        });
-      }
-
-      for (let i = 0; i < player.games.closed.length; i++){
-        await fetch(`https://crib.nowicki.workers.dev?game=${player.games.closed[i]}`).then(function (response) {
-            if (response.ok) {
-                return response.json();
-            }
-            throw response.status;
-        }).then(function (data) {
-            console.log('Game Loaded', data);
-            games.closed.push(data);
-        }).catch(function (error) {
-            console.warn('Game Not Loaded', error);
-            return false;
-        });
-      }
-
-    }
-    callback(player, games);
-    // return apiData;
+let getProfileData = async function(username) {
+  let response = await fetch(`https://crib.nowicki.workers.dev?profile=${username.toLowerCase()}`);
+  if (response.ok) {
+    let profileData = await response.json();
+    return profileData;
+  } else {
+    throw response.status;
+  }
 }
 
 /**
  * Get game data from API
  * @param {String} id           - Game id
- * @return {Object or Boolean}  - Returns game data object or false if none exists
+ * @return {Object or Boolean}  - Returns profile object or status if fetch fails
  */
-let getTableData = async function(id, playerlist, callback) {
-    let game = {};
-    let players = {};
+let getTableData = async function(id) {
+  let response = await fetch(`https://crib.nowicki.workers.dev?table=${id}`);
+  if (response.ok) {
+    let tableData = await response.json();
+    return tableData;
+  } else {
+    throw response.status;
+  }
+}
 
-    await fetch(`https://crib.nowicki.workers.dev?game=${id}`).then(function (response) {
-        if (response.ok) {
-            return response.json();
-        }
-        throw response.status;
-    }).then(function (data) {
-        console.log('Game Loaded', data);
-        game = data;
-    }).catch(function (error) {
-        console.warn('Game Not Loaded', error);
-        return false;
-    });
+let updateData = async function(changes){
 
-    if (playerlist){
-
-      if (game.players[1].username != null){
-        await fetch(`https://crib.nowicki.workers.dev?player=${game.players[1].username.toLowerCase()}`).then(function (response) {
-            if (response.ok) {
-                return response.json();
-            }
-            throw response.status;
-        }).then(function (data) {
-            console.log('Player 1 Loaded', data);
-            players[game.players[1].username.toLowerCase()] = data;
-        }).catch(function (error) {
-            console.warn('Player 1 Not Loaded', error);
-            return false;
-        });
-      }
-
-      if (game.players[2].username != null){
-        await fetch(`https://crib.nowicki.workers.dev?player=${game.players[2].username.toLowerCase()}`).then(function (response) {
-            if (response.ok) {
-                return response.json();
-            }
-            throw response.status;
-        }).then(function (data) {
-            console.log('Player 2 Loaded', data);
-            players[game.players[2].username.toLowerCase()] = data;
-        }).catch(function (error) {
-            console.warn('Player 2 Not Loaded', error);
-            return false;
-        });
-      }
-
+  let response = await fetch('https://crib.nowicki.workers.dev', {
+    method: 'PUT',
+    body: JSON.stringify(changes),
+    headers: {
+        'Content-Type': 'application/json'
     }
+  })
 
-    callback(game, players);
-    // return apiData;
+  if (response.ok){
+    let newData = await response.json()
+    return newData;
+  } else {
+    throw response.status;
+  }
+
+}
+
+/**
+ * Send updated player profile data to API
+ * @param {Object} data - Player data object
+ * @callback callback - Returns boolean
+ */
+let createPlayer = async function(username, callback){
+
+  let player = playerFactory(username);
+
+  let response = await fetch('https://crib.nowicki.workers.dev', {
+    method: 'POST',
+    body: JSON.stringify(player),
+    headers: {
+        'Content-Type': 'application/json'
+    }
+  })
+
+  if (response.ok){
+    let newPlayer = await response.json();
+    return newPlayer;
+  } else {
+    throw response.status;
+  }
+
 }
 
 /**
@@ -882,125 +818,35 @@ let getTableData = async function(id, playerlist, callback) {
  * @param {String} player2 - Username of player 2
  * @callback callback - Returns game object
  */
-let createGame = async function(player1, player2, callback){
+let createGame = async function(player1, player2){
   // Generate game id
-  let id;
-  let checking = true;
-  while (checking) {
+  let id = false;
+  while (!id) {
     // Generate a random 9 digit game id
     id = Math.floor(100000000 + Math.random() * 900000000);
     // Check API to see if id is already in use, if so try again, otherwise break
-    await checkGame(id, function(check){
-      if (!check){
-        checking = false;
-      }
-    });
+    if (await checkGame(id)){
+      id = false;
+    }
   }
+
   let game = gameFactory(id, player1, player2, getDate());
-  await setGame(game, function(created){
-    if(created){
-      console.log('New Game Created');
-    } else {
-      console.warn('New Game Not Created');
-    }
-  });
-  callback(game);
-}
-
-/**
- * Get, update and upload player profile data
- * @param {String} username - Player to update
- * @param {Object} changes - Changes to be made
- * @callback callback - Returns boolean and updated player object
- */
-let updateProfileData = async function(username, changes, callback) {
-  await getProfileData(username, false, async function(player){
-    for (const elem of changes){
-      await setObjectValue(player, elem.type, elem.path, elem.value);
-    }
-    await setPlayer(player, function(updated){
-      if (updated){
-        callback(true, player);
-      } else {
-        callback(false);
-      }
-    });
-  })
-}
-
-/**
- * Get, update and upload game data
- * @param {String} id - Game to update
- * @param {Object} changes - Changes to be made
- * @callback callback - Returns boolean and updated game object
- */
-let updateGameData = async function(id, changes, callback) {
-  await getTableData(id, false, async function(game){
-    for (const elem of changes){
-      await setObjectValue(game, elem.type, elem.path, elem.value);
-    }
-    await setGame(game, function(updated){
-      if (updated){
-        callback(true, game);
-      } else {
-        callback(false);
-      }
-    });
-  })
-}
-
-/**
- * Send updated player profile data to API
- * @param {Object} data - Player data object
- * @callback callback - Returns boolean
- */
-let setPlayer = async function(data, callback){
-  await fetch('https://crib.nowicki.workers.dev', {
-    method: 'PUT',
-    body: JSON.stringify(data),
+  let response = await fetch('https://crib.nowicki.workers.dev', {
+    method: 'POST',
+    body: JSON.stringify(game),
     headers: {
         'Content-Type': 'application/json'
     }
-  }).then(function (response) {
-      if (response.ok) {
-          return response.json();
-      }
-      throw response.status;
-  }).then(function (data) {
-      console.log('Player Updated', data);
-      callback(true);
-  }).catch(function (error) {
-      console.warn('Player Not Updated', error);
-      callback(false);
-  });
-}
+  })
 
-/**
- * Send updated game data to API
- * @param {Object} data - Game data object
- * @callback callback - Returns boolean
- */
-let setGame = async function(data, callback){
-  await fetch('https://crib.nowicki.workers.dev', {
-    method: 'PUT',
-    body: JSON.stringify(data),
-    headers: {
-        'Content-Type': 'application/json'
-    }
-  }).then(function (response) {
-      if (response.ok) {
-          return response.json();
-      }
-      throw response.status;
-  }).then(function (data) {
-      console.log('Game Updated', data);
-      callback(true);
-  }).catch(function (error) {
-      console.warn('Game Not Updated', error);
-      callback(false);
-  });
-}
+  if (response.ok){
+    let newGame = await response.json();
+    return newGame;
+  } else {
+    throw response.status;
+  }
 
+}
 
 
 
@@ -1015,4 +861,4 @@ let setGame = async function(data, callback){
 // Exports
 //
 
-export { cards, playerFactory, notificationFactory, gameFactory, checkLocalStorage, clearLocalStorage, checkUsername, checkGame, getDate, getDiffDate, getProfileData, getTableData, createGame, updateProfileData, updateGameData, setPlayer, setGame};
+export { cards, notificationFactory, checkLocalStorage, clearLocalStorage, checkUsername, checkGame, getDate, getDiffDate, getProfileData, getTableData, createGame, createPlayer, updateData };

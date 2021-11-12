@@ -2,7 +2,7 @@
 // Imports
 //
 
-import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorage, checkUsername, getDate, getDiffDate, getProfileData, createGame, updateProfileData, updateGameData, setPlayer } from './main.js';
+import { notificationFactory, checkLocalStorage, clearLocalStorage, checkUsername, getDate, getDiffDate, getProfileData, createPlayer, createGame, updateData } from './main.js';
 
 (function () {
 
@@ -11,7 +11,6 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 	//
 
   const data = {
-    state: "login", // welcome, check, profile, game
     user: {},
     games: {
       open: [],
@@ -91,12 +90,17 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
     data: {}
   })
 
-  let initProfile = function(player, games) {
-    store.data.user = player;
-    store.data.games.open = games.open;
-    store.data.games.closed = games.closed;
-    store.data.state = 'profile';
-    console.log('STATE: Profile');
+  let initProfile = async function(user) {
+
+    try {
+      let profileData = await getProfileData(user);
+      store.data.user = profileData.player;
+      store.data.games = profileData.games;
+    } catch (error){
+      console.log(error);
+    }
+
+    console.log(store.data);
 
     let userInfo = new Reef('#user-info', {
       store: store,
@@ -333,7 +337,7 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 
   if (user) {
     user = user.toLowerCase();
-    getProfileData(user, true, initProfile);
+    initProfile(user);
   } else {
     openDialog('login');
   }
@@ -351,15 +355,13 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
 
 
   // Click event listeners
-  document.addEventListener('click', function(event){
+  document.addEventListener('click', async function(event){
 
     // Create non-reactive store data object to make changes to
     let storeCopy = store.dataCopy;
-    console.log(store.data);
-    console.log(storeCopy);
 
     //
-    // Dialog
+    // Dialogs
     //
 
     if (event.target.classList.contains('dialog-close')){
@@ -383,51 +385,38 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
       dialog.querySelector('#signup').classList.toggle('is-active');
     }
 
-    // Login button event listener
     if (event.target.id === 'login-submit'){
       event.preventDefault()
       let username = document.querySelector('#login-field').value;
-      checkUsername(username, function(check){
-        if (check){
-          user = username.toLowerCase();
-          localStorage.setItem('user', username);
-          getProfileData(user, true, initProfile);
-          // Close login dialog
-          closeDialog();
-        } else {
-          // Trigger alert
-          document.querySelector('#signup .alert.attention').classList.remove('is-hidden');
-        }
-      });
+      if (await checkUsername(username)){
+        user = username.toLowerCase();
+        localStorage.setItem('user', username);
+        initProfile(user);
+        // Close login dialog
+        closeDialog();
+      } else {
+        // Trigger alert
+        document.querySelector('#login .alert.attention').classList.remove('is-hidden');
+      }
     }
 
-    // Sign up button event listener
     if (event.target.id === 'signup-submit'){
       event.preventDefault()
       let username = document.querySelector('#signup-field').value;
-      checkUsername(username, function(check){
-        if (!check){
-          let player = playerFactory(username);
-          setPlayer(player, function(updated){
-            if (updated){
-              console.log('Set Player Successful - Signup - User');
-            } else {
-              console.log('Set Player Failed - Signup - User');
-            }
-          });
+      if (await checkUsername(username)){
+        let player = await createPlayer(username);
+        if (player){
           localStorage.setItem('user', username);
           user = username.toLowerCase();
-          initProfile(player, {
-              open: [],
-              closed: []
-            }
-          )
+          initProfile(user)
           closeDialog();
         } else {
-          // Trigger alert
-          document.querySelector('#signup .alert.reject').classList.remove('is-hidden');
+          console.warn('Something went wrong. Player not created.');
         }
-      });
+      } else {
+        // Trigger alert
+        document.querySelector('#signup .alert.reject').classList.remove('is-hidden');
+      }
     }
 
     if (event.target.classList.contains('cancel')){
@@ -439,26 +428,6 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
       window.location.reload();
     }
 
-
-    //
-    // Change Log
-    //
-
-    let updateUser = {
-      username: user,
-      changes: []
-    };
-
-    let updateOther = {
-      username: null,
-      changes: []
-    };
-
-    let updateGame = {
-      id: null,
-      changes: []
-    }
-
     //
     // Games
     //
@@ -467,597 +436,456 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
       applyFilter(event.target);
     }
 
-    if (event.target.id == 'new-game-submit'){
-      event.preventDefault()
-      document.querySelector('#new-game .alert.attention').classList.add('is-hidden');
-      let username = document.querySelector('#new-game-field').value;
-
-      let blockedLowerCase = storeCopy.user.blocked.map(name => name.toLowerCase());
-
-      if (blockedLowerCase.includes(username.toLowerCase())){
-        document.querySelector('#new-game .alert.reject').classList.remove('is-hidden');
-
-      } else if (storeCopy.user.username.toLowerCase() == username.toLowerCase()){
-        console.log('Self Invite');
-        document.querySelector('#new-game .alert.attention p').innerHTML = "You can't invite yourself to a game. Nice try.";
-        document.querySelector('#new-game .alert.attention').classList.remove('is-hidden');
-
-      } else {
-        checkUsername(username, function(check){
-          if (check){
-
-            updateOther.username = username.toLowerCase();
-
-            let confirmation = notificationFactory(getDate(), 'game', 'sent', storeCopy.user.username, username);
-
-            updateUser.changes.push({
-              path: 'notifications.unread',
-              value: confirmation,
-              type: 'add'
-            })
-
-            // Log request confirmation for sender
-
-            updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
-              if (updated){
-                console.log('Profile Update Succesful - New Game - User')
-                storeCopy.user = player;
-              } else {
-                console.log('Profile Update Failed - New Game - User')
-              }
-            })
-
-
-
-            // Send the request to recipient
-            let request = notificationFactory(getDate(), 'game', 'received', storeCopy.user.username, username);
-
-            updateOther.changes.push({
-              path: 'notifications.unread',
-              value: request,
-              type: 'add'
-            })
-
-            updateProfileData(updateOther.username, updateOther.changes, function(updated){
-              if (updated){
-                document.querySelector('#new-game .alert.accept').classList.remove('is-hidden');
-                setTimeout(function(){
-                  closeDialog();
-                }, 1000);
-                console.log('Profile Update Succesful - New Game - Other')
-              } else {
-                // Report error
-                console.log('Profile Update Failed - New Game - Other')
-              }
-            });
-
-          } else {
-            // Trigger alert
-            document.querySelector('#new-game .alert.attention p').innerHTML = 'User does not exist';
-            document.querySelector('#new-game .alert.attention').classList.remove('is-hidden');
-          }
-        })
-      }
-    }
-
     if (event.target.classList.contains('join')){
       let id = event.target.dataset.id;
       window.location.assign(`/game.html?id=${id}`);
     }
 
     //
-    // Friends
+    // Change Log
     //
 
-    if (event.target.id == 'add-friend-submit'){
+    let eventType;
+    let changeLog = {
+      user: {
+        username: user,
+        changes: []
+      },
+      other: {
+        username: null,
+        changes: []
+      },
+      game: {
+        id: null,
+        changes: []
+      }
+    }
 
-      event.preventDefault()
-      document.querySelector('#add-friend .alert.attention').classList.add('is-hidden');
-      let username = document.querySelector('#add-friend-field').value;
+    //
+    // Send Requests
+    //
 
+    if (event.target.id == 'new-game-submit' || event.target.id == 'add-friend-submit') {
+
+      event.preventDefault();
+      let selector = event.target.closest('div.is-active').id;
       let friendsLowerCase = storeCopy.user.friends.map(name => name.toLowerCase());
       let blockedLowerCase = storeCopy.user.blocked.map(name => name.toLowerCase());
 
-      if (friendsLowerCase.includes(username.toLowerCase())){
-        document.querySelector('#add-friend .alert.attention p').innerHTML = 'You are already friends with this user';
-        document.querySelector('#add-friend .alert.attention').classList.remove('is-hidden');
+      document.querySelector(`#${selector} .alert.attention`).classList.add('is-hidden');
+      let username = document.querySelector(`#${selector}-field`).value;
 
-      } else if (blockedLowerCase.includes(username.toLowerCase())){
-        document.querySelector('#add-friend .alert.reject').classList.remove('is-hidden');
+      if (blockedLowerCase.includes(username.toLowerCase())){
+        document.querySelector(`#${selector} .alert.reject`).classList.remove('is-hidden');
 
       } else if (storeCopy.user.username.toLowerCase() == username.toLowerCase()){
-        document.querySelector('#add-friend .alert.attention p').innerHTML = "It's important to love yourself, but not in the Friends list.";
-        document.querySelector('#add-friend .alert.attention').classList.remove('is-hidden');
+        document.querySelector(`#${selector} .alert.attention p`).innerHTML = "You can't send a request to yourself.";
+        document.querySelector(`#${selector} .alert.attention`).classList.remove('is-hidden');
+
+      } else if (event.target.id == 'add-friend-submit' && friendsLowerCase.includes(username.toLowerCase())){
+        document.querySelector(`#${selector} .alert.attention p`).innerHTML = 'You are already friends with this user';
+        document.querySelector(`#${selector} .alert.attention`).classList.remove('is-hidden');
 
       } else {
-        checkUsername(username, function(check){
-          if (check){
 
-            // Make sure person is not on the blocked list, should this be stored on both accounts? blocked
+        if (await checkUsername(username)){
 
-            updateOther.username = username.toLowerCase();
+          eventType = 'request';
+          changeLog.other.username = username.toLowerCase();
 
-            // Log request confirmation for sender
-            let confirmation = notificationFactory(getDate(), 'friend', 'sent', storeCopy.user.username, username)
-
-            // Log change to user profile
-            updateUser.changes.push({
-              path: 'notifications.unread',
-              value: confirmation,
-              type: 'add'
-            })
-
-            updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
-              if (updated){
-                console.log('Profile Update Succesful - Add Friend - User');
-                storeCopy.user = player;
-              } else {
-                console.log('Profile Update Failed - Add Friend - User');
-              }
-            })
-
-            // Send the request to recipient
-            let request = notificationFactory(getDate(), 'friend', 'received', storeCopy.user.username, username)
-
-            updateOther.changes.push({
-              path: 'notifications.unread',
-              value: request,
-              type: 'add'
-            })
-
-            updateProfileData(updateOther.username, updateOther.changes, function(updated){
-              if (updated){
-                console.log('Profile Update Succesful - Add Friend - Other');
-                // Inform user of successfully sent request
-                document.querySelector('#add-friend .alert.accept').classList.remove('is-hidden');
-                // Close dialog after a few seconds
-                setTimeout(function(){
-                  closeDialog();
-                }, 750);
-              } else {
-                // Report error
-                console.log('Profile Update Failed - Add Friend - Other');
-              }
-            });
-
-          } else {
-            // Trigger alert
-            document.querySelector('#add-friend .alert.attention p').innerHTML = 'User does not exist';
-            document.querySelector('#add-friend .alert.attention').classList.remove('is-hidden');
-          }
-        })
-      }
-    }
-
-    if (event.target.classList.contains('friend-action')){
-      let index = event.target.closest('.friend').dataset.index;
-      let friend = storeCopy.user.friends[index];
-
-      updateOther.username = friend.toLowerCase();
-
-      if (event.target.classList.contains('new-game')){
-        // Log request confirmation for sender
-        let confirmation = notificationFactory(getDate(), 'game', 'sent', storeCopy.user.username, friend);
-
-        // Log change to user profile
-        updateUser.changes.push({
-          path: 'notifications.unread',
-          value: confirmation,
-          type: 'add'
-        })
-
-        // Send the request to recipient
-        let request = notificationFactory(getDate(), 'game', 'received', storeCopy.user.username, friend);
-
-        updateOther.changes.push({
-          path: 'notifications.unread',
-          value: request,
-          type: 'add'
-        })
-
-      } else if (event.target.classList.contains('remove')){
-        storeCopy.user.friends.splice(index, 1);
-
-        updateUser.changes.push({
-          path: 'friends',
-          value: friend,
-          type: 'remove'
-        })
-
-        updateOther.changes.push({
-          path: 'friends',
-          value: user,
-          type: 'remove'
-        })
-
-      }
-
-      updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
-        if (updated){
-          console.log('Profile Update Successful - Friend Action - User')
-          storeCopy.user = player;
-        } else {
-          console.log('Profile Update Failed - Friend Action - User')
-        }
-      })
-
-      if (updateOther.username != null){
-        updateProfileData(updateOther.username, updateOther.changes, function(updated){
-          if (updated){
-            console.log('Profile Update Successful - Friend Action - Other')
-          } else {
-            // Report error
-            console.log('Profile Update Failed - Friend Action - Other')
-          }
-        });
-      }
-
-    }
-
-    //
-    // Notifications
-    //
-
-    if (event.target.classList.contains('notification-action')){
-      let willCreateGame = false;
-
-      if (event.target.classList.contains('clear-all')){
-        // Move all non-request notifications to read
-        let length = storeCopy.user.notifications.unread.length;
-        console.log(length);
-        for (let i = length - 1; i > -1; i--){
-          console.log(i);
-          if (storeCopy.user.notifications.unread[i].type !== 'received'){
-            storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
-            storeCopy.user.notifications.unread.splice(i, 1);
-          }
-        }
-        // Log change to user profile
-        updateUser.changes.push({
-          path: 'notifications',
-          value: storeCopy.user.notifications,
-          type: 'replace'
-        })
-
-      } else {
-        let index = event.target.closest('.notification').dataset.index;
-        let notification = storeCopy.user.notifications.unread[index];
-
-        if (event.target.classList.contains('clear')) {
-          // Move the notification to read
-          storeCopy.user.notifications.read.unshift(notification);
-          storeCopy.user.notifications.unread.splice(index, 1);
+          // Log request confirmation for sender
+          let confirmation = notificationFactory(getDate(), `${selector == 'new-game' ? 'game' : 'friend'}`, 'sent', storeCopy.user.username, username)
           // Log change to user profile
-          updateUser.changes.push({
-            path: 'notifications',
-            value: storeCopy.user.notifications,
-            type: 'replace'
+          changeLog.user.changes.push({
+            path: 'notifications.unread',
+            value: confirmation,
+            type: 'add'
+          })
+
+          // Send the request to recipient
+          let request = notificationFactory(getDate(), `${selector == 'new-game' ? 'game' : 'friend'}`, 'received', storeCopy.user.username, username)
+          changeLog.other.changes.push({
+            path: 'notifications.unread',
+            value: request,
+            type: 'add'
           })
 
         } else {
-          // Create reply notification object
-          let reply = notificationFactory(getDate(), notification.type, null, storeCopy.user.username, notification.sender);
-          // Log sender username
-          updateOther.username = notification.sender.toLowerCase();
+          // Trigger alert
+          document.querySelector(`#${selector} .alert.attention p`).innerHTML = 'User does not exist';
+          document.querySelector(`#${selector} .alert.attention`).classList.remove('is-hidden');
+        }
 
-          if (event.target.classList.contains('accept')){
-            reply.status = 'accepted';
+      }
 
-            if (notification.type == 'friend'){
-              // Add request sender to recipient friends list
-              updateUser.changes.push({
-                path: 'friends',
-                value: notification.sender,
-                type: 'add'
-              })
-              // Add request recipient to sender friend list
-              updateOther.changes.push({
-                path: 'friends',
-                value: notification.recipient,
-                type: 'add'
-              });
+    } else {
 
-            } else if (notification.type == 'game'){
-              // Create game and link it to both accounts
-              willCreateGame = true;
-            }
+      //
+      // Friend Actions
+      //
 
+      if (event.target.classList.contains('friend-action')){
+        let index = event.target.closest('.friend').dataset.index;
+        let friend = storeCopy.user.friends[index];
 
-          } else if (event.target.classList.contains('reject')){
-            reply.status = 'rejected';
-          }
+        changeLog.other.username = friend.toLowerCase();
 
-          // Move notification and all duplicates to read
+        if (event.target.classList.contains('new-game')){
+          // Log request confirmation for sender
+          let confirmation = notificationFactory(getDate(), 'game', 'sent', storeCopy.user.username, friend);
+
+          // Log change to user profile
+          changeLog.user.changes.push({
+            path: 'notifications.unread',
+            value: confirmation,
+            type: 'add'
+          })
+
+          // Send the request to recipient
+          let request = notificationFactory(getDate(), 'game', 'received', storeCopy.user.username, friend);
+
+          changeLog.other.changes.push({
+            path: 'notifications.unread',
+            value: request,
+            type: 'add'
+          })
+
+        } else if (event.target.classList.contains('remove')){
+          storeCopy.user.friends.splice(index, 1);
+
+          changeLog.user.changes.push({
+            path: 'friends',
+            value: friend,
+            type: 'remove'
+          })
+
+          changeLog.other.changes.push({
+            path: 'friends',
+            value: user,
+            type: 'remove'
+          })
+        }
+      }
+
+      //
+      // Notification Actions
+      //
+
+      if (event.target.classList.contains('notification-action')){
+        let willCreateGame = false;
+
+        if (event.target.classList.contains('clear-all')){
+          // Move all non-request notifications to read
           let length = storeCopy.user.notifications.unread.length;
           for (let i = length - 1; i > -1; i--){
-            if (storeCopy.user.notifications.unread[i].sender == notification.sender
-              && storeCopy.user.notifications.unread[i].type == notification.type
-              && storeCopy.user.notifications.unread[i].status == notification.status) {
+            if (storeCopy.user.notifications.unread[i].type !== 'received'){
               storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
               storeCopy.user.notifications.unread.splice(i, 1);
             }
           }
-
           // Log change to user profile
-          updateUser.changes.push({
+          changeLog.user.changes.push({
             path: 'notifications',
             value: storeCopy.user.notifications,
             type: 'replace'
           })
 
-          updateOther.changes.push({
-            path: 'notifications.unread',
-            value: reply,
-            type: 'add'
-          });
+        } else {
+          let index = event.target.closest('.notification').dataset.index;
+          let notification = storeCopy.user.notifications.unread[index];
 
-          if (willCreateGame){
-            createGame(notification.sender, notification.recipient, function(game){
+          if (event.target.classList.contains('clear')) {
+            // Move the notification to read
+            storeCopy.user.notifications.read.unshift(notification);
+            storeCopy.user.notifications.unread.splice(index, 1);
+            // Log change to user profile
+            changeLog.user.changes.push({
+              path: 'notifications',
+              value: storeCopy.user.notifications,
+              type: 'replace'
+            })
 
-              updateUser.changes.push({
-                path: 'games.open',
-                value: game.id,
-                type: 'add'
-              });
-
-              updateOther.changes.push({
-                path: 'games.open',
-                value: game.id,
-                type: 'add'
-              });
-
-              updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
-                if (updated){
-                  storeCopy.user = player;
-                  storeCopy.games.open.push(game);
-                  console.log('Profile Update Successful - Notification Action - User');
-                } else {
-                  console.log('Profile Update Failed - Notification Action - User');
-                }
-              });
-
-              updateProfileData(updateOther.username, updateOther.changes, function(updated){
-                if (updated){
-                  console.log('Profile Update Successful - Notification Action - Other');
-                } else {
-                  console.log('Profile Update Failed - Notification Action - Other');
-                }
-              });
-
-            });
-          }
-
-        }
-      }
-
-      console.log('update user', updateUser);
-      console.log('update other', updateOther);
-
-       if (!willCreateGame) {
-
-        updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
-          if (updated){
-            storeCopy.user = player;
-            console.log('Profile Update Successful - Notification Action - User');
           } else {
-            console.log('Profile Update Failed - Notification Action - User');
-          }
-        });
+            // Create reply notification object
+            let reply = notificationFactory(getDate(), notification.type, null, storeCopy.user.username, notification.sender);
+            // Log sender username
+            changeLog.other.username = notification.sender.toLowerCase();
 
-        if (updateOther.username != null){
-          updateProfileData(updateOther.username, updateOther.changes, function(updated){
-            if (updated){
-              console.log('Profile Update Successful - Notification Action - Other');
-            } else {
-              console.log('Profile Update Failed - Notification Action - Other');
+            if (event.target.classList.contains('accept')){
+              reply.status = 'accepted';
+
+              if (notification.type == 'friend'){
+                // Add request sender to recipient friends list
+                changeLog.user.changes.push({
+                  path: 'friends',
+                  value: notification.sender,
+                  type: 'add'
+                })
+                // Add request recipient to sender friend list
+                changeLog.other.changes.push({
+                  path: 'friends',
+                  value: notification.recipient,
+                  type: 'add'
+                });
+
+              } else if (notification.type == 'game'){
+                // Create game and link it to both accounts
+                let newGame = await createGame(notification.sender, notification.recipient);
+
+                changeLog.user.changes.push({
+                  path: 'games.open',
+                  value: newGame.id,
+                  type: 'add'
+                });
+
+                changeLog.other.changes.push({
+                  path: 'games.open',
+                  value: newGame.id,
+                  type: 'add'
+                });
+
+                storeCopy.games.open.push(newGame);
+
+              }
+
+
+            } else if (event.target.classList.contains('reject')){
+              reply.status = 'rejected';
             }
-          });
-        }
 
-      }
+            // Move notification and all duplicates to read
+            let length = storeCopy.user.notifications.unread.length;
+            for (let i = length - 1; i > -1; i--){
+              if (storeCopy.user.notifications.unread[i].sender == notification.sender
+                && storeCopy.user.notifications.unread[i].type == notification.type
+                && storeCopy.user.notifications.unread[i].status == notification.status) {
+                storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
+                storeCopy.user.notifications.unread.splice(i, 1);
+              }
+            }
 
-    }
+            // Log change to user profile
+            changeLog.user.changes.push({
+              path: 'notifications',
+              value: storeCopy.user.notifications,
+              type: 'replace'
+            })
 
+            changeLog.other.changes.push({
+              path: 'notifications.unread',
+              value: reply,
+              type: 'add'
+            });
 
-
-
-
-    if (event.target.classList.contains('confirm')){
-      let type = event.target.dataset.type;
-      let index = event.target.dataset.index;
-
-      if (type == 'leave'){
-        updateGame.id = storeCopy.games.open[index].id;
-
-        let otherUsername;
-
-        if (storeCopy.games.open[index].players[1].username.toLowerCase() != storeCopy.user.username.toLowerCase()){
-          updateOther.username = storeCopy.games.open[index].players[1].username.toLowerCase();
-          otherUsername = storeCopy.games.open[index].players[2].username;
-        } else {
-          updateOther.username = storeCopy.games.open[index].players[2].username.toLowerCase();
-          otherUsername = storeCopy.games.open[index].players[1].username;
-        }
-
-        updateGame.changes.push({
-          path: 'winner',
-          value: `${otherUsername}, by forfeit`,
-          type: 'replace'
-        })
-
-        updateGame.changes.push({
-          path: 'date.completed',
-          value: getDate(),
-          type: 'replace'
-        })
-
-        // Log stats
-        updateUser.changes.push({
-          path: 'stats.loses',
-          value: 1,
-          type: 'plus'
-        })
-        updateUser.changes.push({
-          path: 'stats.winStreak',
-          value: 0,
-          type: 'replace'
-        })
-        updateOther.changes.push({
-          path: 'stats.wins',
-          value: 1,
-          type: 'plus'
-        })
-        updateOther.changes.push({
-          path: 'stats.winStreak',
-          value: 1,
-          type: 'plus'
-        })
-
-        // Move the game to completed
-        updateUser.changes.push({
-          path: 'games.open',
-          value: updateGame.id,
-          type: 'remove'
-        })
-        updateUser.changes.push({
-          path: 'games.closed',
-          value: updateGame.id,
-          type: 'add'
-        })
-        updateOther.changes.push({
-          path: 'games.open',
-          value: updateGame.id,
-          type: 'remove'
-        })
-        updateOther.changes.push({
-          path: 'games.closed',
-          value: updateGame.id,
-          type: 'add'
-        })
-
-
-        // Notify the other player
-
-        // Log request confirmation for sender
-        let confirmation = notificationFactory(getDate(), 'forfeit', 'sent', storeCopy.user.username, updateOther.username, updateGame.id);
-
-        // Log change to user profile
-        updateUser.changes.push({
-          path: 'notifications.unread',
-          value: confirmation,
-          type: 'add'
-        })
-
-        let notice = notificationFactory(getDate(), 'forfeit', 'received', storeCopy.user.username, updateOther.username, updateGame.id);
-
-        updateOther.changes.push({
-          path: 'notifications.unread',
-          value: notice,
-          type: 'add'
-        })
-
-      } else if (type == 'block'){
-        updateOther.username = storeCopy.user.notifications.unread[index].sender.toLowerCase();
-
-        // Add request sender to recipient blocked list
-        updateUser.changes.push({
-          path: 'blocked',
-          value: updateOther.username,
-          type: 'add'
-        })
-        // Add request recipient to sender blocked list
-        updateOther.changes.push({
-          path: 'blocked',
-          value: storeCopy.user.username,
-          type: 'add'
-        })
-
-        // Remove all notifications from that user
-        let length = storeCopy.user.notifications.unread.length;
-        for (let i = length - 1; i > -1; i--){
-          if (storeCopy.user.notifications.unread[i].sender == updateOther.username){
-            storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
-            storeCopy.user.notifications.unread.splice(i, 1);
           }
         }
-        // Log change to user profile
-        updateUser.changes.push({
-          path: 'notifications',
-          value: storeCopy.user.notifications,
-          type: 'replace'
-        })
-
-        // Log request confirmation for sender
-        let confirmation = notificationFactory(getDate(), 'block', 'sent', storeCopy.user.username, updateOther.username);
-
-        // Log change to user profile
-        updateUser.changes.push({
-          path: 'notifications.unread',
-          value: confirmation,
-          type: 'add'
-        })
-
-        let notice = notificationFactory(getDate(), 'block', 'received', storeCopy.user.username, updateOther.username);
-
-        updateOther.changes.push({
-          path: 'notifications.unread',
-          value: notice,
-          type: 'add'
-        })
-
-
       }
 
-      console.log(updateGame);
-      console.log(updateUser);
-      console.log(updateOther);
+      //
+      // Confirms
+      //
 
-      // Log the winner
-      if (updateGame.id != null){
-        updateGameData(updateGame.id, updateGame.changes, function(updated, game){
-          if (updated){
-            console.log('Game Update Successful - Confirm Action');
-            storeCopy.games.open.splice(index, 1);
-            storeCopy.games.closed.unshift(game);
+      if (event.target.classList.contains('confirm')){
+        let type = event.target.dataset.type;
+        let index = event.target.dataset.index;
+
+        if (type == 'leave'){
+
+          eventType == 'leave';
+          changeLog.game.id = storeCopy.games.open[index].id;
+
+          let otherUsername;
+
+          if (storeCopy.games.open[index].players[1].username.toLowerCase() != storeCopy.user.username.toLowerCase()){
+            changeLog.other.username = storeCopy.games.open[index].players[1].username.toLowerCase();
+            otherUsername = storeCopy.games.open[index].players[2].username;
           } else {
-            console.warn('Game Update Failed - Confirm Action');
+            changeLog.other.username = storeCopy.games.open[index].players[2].username.toLowerCase();
+            otherUsername = storeCopy.games.open[index].players[1].username;
           }
-        })
+
+          changeLog.game.changes.push({
+            path: 'winner',
+            value: `${otherUsername}, by forfeit`,
+            type: 'replace'
+          })
+
+          changeLog.game.changes.push({
+            path: 'date.completed',
+            value: getDate(),
+            type: 'replace'
+          })
+
+          // Log stats
+          changeLog.user.changes.push({
+            path: 'stats.loses',
+            value: 1,
+            type: 'plus'
+          })
+          changeLog.user.changes.push({
+            path: 'stats.winStreak',
+            value: 0,
+            type: 'replace'
+          })
+          changeLog.other.changes.push({
+            path: 'stats.wins',
+            value: 1,
+            type: 'plus'
+          })
+          changeLog.other.changes.push({
+            path: 'stats.winStreak',
+            value: 1,
+            type: 'plus'
+          })
+
+          // Move the game to completed
+          changeLog.user.changes.push({
+            path: 'games.open',
+            value: changeLog.game.id,
+            type: 'remove'
+          })
+          changeLog.user.changes.push({
+            path: 'games.closed',
+            value: changeLog.game.id,
+            type: 'add'
+          })
+          changeLog.other.changes.push({
+            path: 'games.open',
+            value: changeLog.game.id,
+            type: 'remove'
+          })
+          changeLog.other.changes.push({
+            path: 'games.closed',
+            value: changeLog.game.id,
+            type: 'add'
+          })
+
+
+          // Notify the other player
+
+          // Log request confirmation for sender
+          let confirmation = notificationFactory(getDate(), 'forfeit', 'sent', storeCopy.user.username, changeLog.other.username, changeLog.game.id);
+
+          // Log change to user profile
+          changeLog.user.changes.push({
+            path: 'notifications.unread',
+            value: confirmation,
+            type: 'add'
+          })
+
+          let notice = notificationFactory(getDate(), 'forfeit', 'received', storeCopy.user.username, changeLog.other.username, changeLog.game.id);
+
+          changeLog.other.changes.push({
+            path: 'notifications.unread',
+            value: notice,
+            type: 'add'
+          })
+
+        } else if (type == 'block'){
+          changeLog.other.username = storeCopy.user.notifications.unread[index].sender.toLowerCase();
+
+          // Add request sender to recipient blocked list
+          changeLog.user.changes.push({
+            path: 'blocked',
+            value: changeLog.other.username,
+            type: 'add'
+          })
+          // Add request recipient to sender blocked list
+          changeLog.other.changes.push({
+            path: 'blocked',
+            value: storeCopy.user.username,
+            type: 'add'
+          })
+
+          // Remove all notifications from that user
+          let length = storeCopy.user.notifications.unread.length;
+          for (let i = length - 1; i > -1; i--){
+            if (storeCopy.user.notifications.unread[i].sender == changeLog.other.username){
+              storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
+              storeCopy.user.notifications.unread.splice(i, 1);
+            }
+          }
+          // Log change to user profile
+          changeLog.user.changes.push({
+            path: 'notifications',
+            value: storeCopy.user.notifications,
+            type: 'replace'
+          })
+
+          // Log request confirmation for sender
+          let confirmation = notificationFactory(getDate(), 'block', 'sent', storeCopy.user.username, changeLog.other.username);
+
+          // Log change to user profile
+          changeLog.user.changes.push({
+            path: 'notifications.unread',
+            value: confirmation,
+            type: 'add'
+          })
+
+          let notice = notificationFactory(getDate(), 'block', 'received', storeCopy.user.username, changeLog.other.username);
+
+          changeLog.other.changes.push({
+            path: 'notifications.unread',
+            value: notice,
+            type: 'add'
+          })
+        }
+
+        closeDialog();
       }
 
-      updateProfileData(updateUser.username, updateUser.changes, function(updated, player){
-        if (updated){
-          console.log('Profile Update Successful - Confirm Action - User');
-          // storeCopy.user = player;
-        } else {
-          console.warn('Profile Update Failed - Confirm Action - User');
-        }
-      })
+      //
+      // API Updates
+      //
 
-      updateProfileData(updateOther.username, updateOther.changes, function(updated){
-        if (updated){
-          console.log('Profile Update Successful - Confirm Action - Other');
-        } else {
-          // Report error
-          console.warn('Profile Update Failed - Confirm Action - Other');
-        }
-      });
+      let userData;
+      let otherData;
+      let gameData;
 
-      closeDialog();
+      if (changeLog.user.changes.length > 0){
+        userData = await updateData(changeLog.user);
+      }
+      if (changeLog.other.changes.length > 0){
+        otherData = await updateData(changeLog.other);
+      }
+      if (changeLog.game.changes.length > 0){
+        gameData = await updateData(changeLog.game);
+      }
+
+      //
+      // UI Updates
+      //
+
+      if (userData){
+        // Update user data
+        storeCopy.user = userData;
+        // Inform user of successfully sent request
+        if (eventType == 'request'){
+          document.querySelector(`#${selector} .alert.accept`).classList.remove('is-hidden');
+          // Close dialog after a few seconds
+          setTimeout(function(){
+            closeDialog();
+          }, 750);
+        }
+      } else {
+        console.warn('User Update Failed');
+      }
+
+      if (gameData){
+        if (eventType == 'leave');{
+          // Move game to closed
+          storeCopy.games.open.splice(event.target.dataset.index, 1);
+          storeCopy.games.closed.unshift(gameData);
+        }
+      }
+
+      if (userData || gameData) {
+        console.log('Original', store.data);
+        console.log('Changed', storeCopy);
+        store.data = storeCopy;
+      }
 
     }
-
-
-
-
-
-
-
-    // Update the app THIS WILL UPDATE PRIOR TO UPDATE FUNCTION, FIX
-    console.log(store.data);
-    console.log(storeCopy);
-    store.data = storeCopy;
-
     // Update server with new game state
 
   })
@@ -1071,8 +899,6 @@ import { playerFactory, notificationFactory, checkLocalStorage, clearLocalStorag
     if (event.key == 'Enter'){
       event.preventDefault();
     }
-
-    console.log(event);
 
   })
 
