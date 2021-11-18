@@ -2,7 +2,7 @@
 // Imports
 //
 
-import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, getTableData, updateProfileData, updateGameData } from './main.js';
+import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, updateData } from './main.js';
 
 (function () {
 
@@ -14,6 +14,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     user: null,
     game: {},
     players: {},
+    alert: null,
 
     // For switch player testing
     userIndex: null,
@@ -253,9 +254,8 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       // Check whether the player has a valid card to play, if so alert, and bail
       if (checkValidPlay(obj, obj.userIndex)){
         // alert('You have a card you can play!');
-        document.querySelector('#prompts .alert[data-type="go"]').classList.remove('is-hidden');
-        console.log(document.querySelector('#prompts .alert[data-type="go"]'));
-        console.log('invalid go');
+        obj.alert = 'go';
+        console.log('Go Alert!')
         return;
       }
       // Assign the go
@@ -317,13 +317,24 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     obj.game.go = null;
     obj.game.phase = "count";
     // Score each hand and the crib
-    obj.game.players[obj.userIndex].score += scoreHand(obj, obj.game.players[obj.userIndex].discard, obj.game.players[obj.userIndex].username);
-    obj.game.players[obj.oppoIndex].score += scoreHand(obj, obj.game.players[obj.oppoIndex].discard, obj.game.players[obj.oppoIndex].username);
+    let userHandScore = scoreHand(obj, obj.game.players[obj.userIndex].discard, obj.game.players[obj.userIndex].username);
+    obj.game.players[obj.userIndex].score += userHandScore;
+    obj.game.players[obj.userIndex].highestHandScore = Math.max(obj.game.players[obj.userIndex].highestHandScore, userHandScore);
+
+    let opponentHandScore = scoreHand(obj, obj.game.players[obj.oppoIndex].discard, obj.game.players[obj.oppoIndex].username);
+    obj.game.players[obj.oppoIndex].score += opponentHandScore;
+    obj.game.players[obj.oppoIndex].highestHandScore = Math.max(obj.game.players[obj.oppoIndex].highestHandScore, opponentHandScore);
+
     if (obj.game.dealer == obj.userIndex){
-      obj.game.players[obj.userIndex].score += scoreHand(obj, obj.game.crib, obj.game.players[obj.userIndex].username);
+      let userCribScore = scoreHand(obj, obj.game.crib, obj.game.players[obj.userIndex].username);
+      obj.game.players[obj.userIndex].score += userCribScore;
+      obj.game.players[obj.userIndex].highestHandScore = Math.max(obj.game.players[obj.userIndex].highestHandScore, userCribScore);
     } else {
-      obj.game.players[obj.oppoIndex].score += scoreHand(obj, obj.game.crib, obj.game.players[obj.oppoIndex].username);
+      let opponentCribScore = scoreHand(obj, obj.game.crib, obj.game.players[obj.oppoIndex].username);
+      obj.game.players[obj.oppoIndex].score += opponentCribScore;
+      obj.game.players[obj.oppoIndex].highestHandScore = Math.max(obj.game.players[obj.oppoIndex].highestHandScore, opponentCribScore);
     }
+
     // Pass on to the deal phase
     obj.game.phase = 'deal';
     switchDealer(obj);
@@ -335,6 +346,24 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
    * Clean up and reset at the end of the game
    */
   let gameEnd = function(obj) {
+    // Show dialog of game summary
+
+
+    // Update game data
+    if (obj.game.players[obj.userIndex].score >= 121){
+      obj.game.winner = obj.game.players[obj.userIndex].username;
+    } else {
+      obj.game.winner = obj.game.players[obj.oppoIndex].username;
+    }
+
+    // Reset game variables
+    obj.turn = null;
+    obj.dealer = null;
+    obj.go = null;
+
+    // Add final log
+    newLog(obj, obj.game.winner);
+
 
   }
 
@@ -367,7 +396,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
    * @return {Number}     - Returns the value of the hand
    */
   let scoreHand = function(obj, hand, name) {
-    let handScore = 0;
     let suits = [];
     let ranks = [];
     let values = [];
@@ -395,7 +423,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
         console.log('SCORE: Jack of Same Suit');
         log.description.push('Jack of Same Suit');
         log.value += 2;
-        handScore += 2;
       }
     });
 
@@ -433,7 +460,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     }
 
     if (fifteens !== 0){
-      handScore += 2 * fifteens;
       console.log('SCORE: ' + fifteens + ' fifteens');
       log.description.push(`${fifteens} fifteen${fifteens > 1 ? 's' : ''}`);
       log.value += (2 * fifteens);
@@ -446,12 +472,10 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
         console.log('SCORE: 5 card flush');
         log.description.push('5 card flush');
         log.value += 5;
-        handScore += 5;
       } else {
         console.log('SCORE: 4 card flush');
         log.description.push('4 card flush');
         log.value += 4;
-        handScore += 4;
       }
     }
 
@@ -478,13 +502,11 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
         console.log('SCORE: triple run of three');
         log.description.push('Triple run of three');
         log.value += 15;
-        handScore += 15;
       } else {
         // Three of a Kind
         console.log('SCORE: three of a kind');
         log.description.push('Three of a kind');
         log.value += 6;
-        handScore += 6;
       }
     } else if (double.length == 2){
       if (run.length == 3){
@@ -492,13 +514,11 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
         console.log('SCORE: quadruple run of three');
         log.description.push('Quadruple run of three');
         log.value += 16;
-        handScore += 16;
       } else {
         // 2 x Two of a Kind
         console.log('SCORE: 2 x two of a kind');
         log.description.push('2 Two of kinds');
         log.value += 4;
-        handScore += 4;
       }
     } else if (double.length == 1){
       if (run.length == 4){
@@ -506,51 +526,45 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
         console.log('SCORE: double run of four');
         log.description.push('Double run of four');
         log.value += 10;
-        handScore += 10;
       } else if (run.length == 3){
         if (run.includes(Number(double[0]))){
           // Double Run of Three
           console.log('SCORE: double run of three');
           log.description.push('Double run of three');
           log.value += 8;
-          handScore += 8;
         } else {
           // Two of a Kind and a Run of Three
           console.log('SCORE: two of a kind and a run of three');
           log.description.push('Two of a kind and a run of three');
           log.value += 5;
-          handScore += 5;
         }
       } else {
         // Two of a Kind
         console.log('SCORE: two of a kind');
         log.description.push('Two of a kind');
         log.value += 2;
-        handScore += 2;
       }
     } else if (run.length == 3){
       // Run of Three
       console.log('SCORE: run of three');
       log.description.push('Run of three');
       log.value += 3;
-      handScore += 3;
     } else if (run.length == 4){
       // Run of Four
       console.log('SCORE: run of four');
       log.description.push('Run of four');
       log.value += 4;
-      handScore += 4;
     } else if (run.length == 5){
       // Run of Five
       console.log('SCORE: run of five');
       log.description.push('Run of five');
       log.value += 5;
-      handScore += 5;
     }
 
-    console.log(`${name}'s hand score is ${handScore}`);
+    console.log(`${name}'s hand score is ${log.value}`);
     newLog(obj, log.player, log.description, log.cards, log.value);
-    return handScore;
+
+    return log.value;
   }
 
   /**
@@ -579,12 +593,19 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
   }
 
   /**
-   * Load game from API, based on URL
+   * Refresh Table Data
    */
-  let loadGame = function(){
-    let urlSearchParams = new URLSearchParams(window.location.search);
-    let params = Object.fromEntries(urlSearchParams.entries());
-    getTableData(params.id, true, initTable);
+  let refreshTable = async function(id){
+    let tableData = await getTableData(id);
+    store.data.game = tableData.game;
+  }
+
+  let openDialog = function(pane){
+    // Show the target pane
+    dialog.querySelector(`#${pane}`).classList.add('is-active');
+    dialog.querySelector(`#${pane}`).classList.remove('is-hidden');
+    // Show the dialog
+    dialog.classList.toggle('is-open');
   }
 
 
@@ -600,12 +621,19 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     data: {}
   })
 
-  let initTable = function(game, players){
+  let initTable = async function(){
 
+    try {
+      let urlSearchParams = new URLSearchParams(window.location.search);
+      let params = Object.fromEntries(urlSearchParams.entries());
+      let tableData = await getTableData(params.id);
+      console.log(tableData);
+      store.data.players = tableData.players;
+      store.data.game = tableData.game;
+    } catch (error){
+      console.log(error);
+    }
 
-
-    store.data.game = game;
-    store.data.players = players
     console.log(store.data);
 
     if (store.data.game.players[1].username.toLowerCase() == store.data.user.toLowerCase()){
@@ -685,7 +713,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       template: function(props) {
         return `
         <div class="instructions">
-
           ${props.game.phase == 'new' ? `
             ${props.userIndex == 2 ? `
               <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
@@ -715,15 +742,13 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
               <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must select a card to play or Go!</h3>
           ` : ''}
         </div>
-        <div class="alert reject flex-row is-hidden" data-type="go">
-          <svg class="icon-reject" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M19.88 9.12a1.24 1.24 0 0 1 0 1.76l-3.61 3.62 3.61 3.62a1.24 1.24 0 0 1 0 1.76 1.23 1.23 0 0 1-1.76 0l-3.62-3.61-3.62 3.61a1.23 1.23 0 0 1-1.76 0 1.24 1.24 0 0 1 0-1.76l3.61-3.62-3.61-3.62a1.24 1.24 0 0 1 1.76-1.76l3.62 3.61 3.62-3.61a1.24 1.24 0 0 1 1.76 0Zm8.12.62v9.52a2 2 0 0 1-.59 1.42l-6.73 6.73a2 2 0 0 1-1.42.59H9.74a2 2 0 0 1-1.42-.59l-6.73-6.73A2 2 0 0 1 1 19.26V9.74a2 2 0 0 1 .59-1.42l6.73-6.73A2 2 0 0 1 9.74 1h9.52a2 2 0 0 1 1.42.59l6.73 6.73A2 2 0 0 1 28 9.74Zm-2 0L19.26 3H9.74L3 9.74v9.52L9.74 26h9.52L26 19.26Z"/></svg>
-          <p>You must play the valid card in your hand!</p>
-        </div>
-        <div class="alert reject flex-row is-hidden" data-type="bust">
-          <svg class="icon-reject" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M19.88 9.12a1.24 1.24 0 0 1 0 1.76l-3.61 3.62 3.61 3.62a1.24 1.24 0 0 1 0 1.76 1.23 1.23 0 0 1-1.76 0l-3.62-3.61-3.62 3.61a1.23 1.23 0 0 1-1.76 0 1.24 1.24 0 0 1 0-1.76l3.61-3.62-3.61-3.62a1.24 1.24 0 0 1 1.76-1.76l3.62 3.61 3.62-3.61a1.24 1.24 0 0 1 1.76 0Zm8.12.62v9.52a2 2 0 0 1-.59 1.42l-6.73 6.73a2 2 0 0 1-1.42.59H9.74a2 2 0 0 1-1.42-.59l-6.73-6.73A2 2 0 0 1 1 19.26V9.74a2 2 0 0 1 .59-1.42l6.73-6.73A2 2 0 0 1 9.74 1h9.52a2 2 0 0 1 1.42.59l6.73 6.73A2 2 0 0 1 28 9.74Zm-2 0L19.26 3H9.74L3 9.74v9.52L9.74 26h9.52L26 19.26Z"/></svg>
-          <p>You can't exceed 31!</p>
-        </div>
-
+        ${props.alert != null ? `
+          <div class="alert reject flex-row" data-type="${props.alert}">
+            <svg class="icon-reject" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M19.88 9.12a1.24 1.24 0 0 1 0 1.76l-3.61 3.62 3.61 3.62a1.24 1.24 0 0 1 0 1.76 1.23 1.23 0 0 1-1.76 0l-3.62-3.61-3.62 3.61a1.23 1.23 0 0 1-1.76 0 1.24 1.24 0 0 1 0-1.76l3.61-3.62-3.61-3.62a1.24 1.24 0 0 1 1.76-1.76l3.62 3.61 3.62-3.61a1.24 1.24 0 0 1 1.76 0Zm8.12.62v9.52a2 2 0 0 1-.59 1.42l-6.73 6.73a2 2 0 0 1-1.42.59H9.74a2 2 0 0 1-1.42-.59l-6.73-6.73A2 2 0 0 1 1 19.26V9.74a2 2 0 0 1 .59-1.42l6.73-6.73A2 2 0 0 1 9.74 1h9.52a2 2 0 0 1 1.42.59l6.73 6.73A2 2 0 0 1 28 9.74Zm-2 0L19.26 3H9.74L3 9.74v9.52L9.74 26h9.52L26 19.26Z"/></svg>
+            ${props.alert == 'go' ? `<p>If you can play a card from your hand, you must!</p>` : ''}
+            ${props.alert == 'bust' ? `<p>You can't play a card that will exceed 31!</p>` : ''}
+          </div>
+        ` : ``}
         `;
       },
       attachTo: table
@@ -897,7 +922,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
                 ` : ''}
 
                 ${(item.cards.other != null || item.cards.starter != null) && index < 5 ? `
-                  <div class="cards mini">
+                  <div class="cards mini flex-row">
                     ${item.cards.starter != null ? `
                       <div class="card starter">
                         ${item.cards.starter.svg}
@@ -1007,6 +1032,17 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       attachTo: table
     })
 
+    let gameEndDialog = new Reef('#game-end', {
+      store: store,
+      template: function(props) {
+        return `
+          <h1>Game End</h1>
+          <p>${props.game.winner} is the winner!</p>
+          <button type="button">Return to Profile</button>
+        `;
+      }
+    })
+
   }
 
 
@@ -1024,25 +1060,15 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
   if (user) {
     store.data.user = user;
-    // Load game and players from API
-    loadGame();
+    // Initiate the Game Table
+    initTable();
   } else {
     window.location.replace(`/`);
     // dialog.classList.toggle('is-open');
   }
 
-
-
-
-
-
-
-
-
-
-
   // Refresh game data every 10 seconds
-  // setInterval(loadGame, 10000);
+  // setInterval(refreshTable(store.game.id), 10000);
 
   // Hash change event listeners
   // window.addEventListener('hashchange', function() {
@@ -1055,7 +1081,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
   // })
 
   // Click event listeners
-  document.addEventListener('click', function(event){
+  document.addEventListener('click', async function(event){
 
     // Create non-reactive store data object to make changes to
     let storeCopy = store.dataCopy;
@@ -1063,28 +1089,39 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
     console.log(storeCopy);
 
     //
+    // Alerts
+    //
+
+    // Dismiss alert
+    storeCopy.alert = null;
+
+    //
+    // Dialogs
+    //
+
+    if (event.target.classList.contains('dialog-close')){
+      closeDialog();
+    }
+
+    //
     // Change Log
     //
 
-    let updateUser = {
-      username: user,
-      changes: []
-    };
-
-    let updateOther = {
-      username: null,
-      changes: []
-    };
-
-    let updateGame = {
-      id: null,
-      changes: []
-    }
-
-    // Reset alerts
-    let alerts = document.querySelectorAll('#prompts .alert');
-    for (const alert of alerts){
-      alert.classList.add('is-hidden');
+    let updateGame = false;
+    let eventType;
+    let changeLog = {
+      user: {
+        username: storeCopy.game.players[storeCopy.userIndex].username.toLowerCase(),
+        changes: []
+      },
+      other: {
+        username: storeCopy.game.players[storeCopy.oppoIndex].username.toLowerCase(),
+        changes: []
+      },
+      game: {
+        id: store.data.game.id,
+        changes: []
+      }
     }
 
     if (event.target.id === 'logout') {
@@ -1094,6 +1131,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
     // Card event listeners
     if (event.target.classList.contains('card')){
+
       let targetCard = event.target.dataset;
       let targetId = Number(event.target.dataset.id);
 
@@ -1104,6 +1142,8 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
       }
 
       if (storeCopy.game.phase === 'crib') {
+
+        updateGame = true;
 
         // Add selected card to the crib
         storeCopy.game.crib.push(cards[targetId-1]);
@@ -1132,6 +1172,8 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
         // Check whether it's the player's turn and the selected card is valid
         if (storeCopy.game.turn == storeCopy.userIndex && (Number(targetCard.value) + storeCopy.game.tally) < 32){
+
+          updateGame = true;
 
           //Add the card to the play area and remove from hand
           storeCopy.game.players[storeCopy.userIndex].play.push(cards[targetId-1]);
@@ -1246,8 +1288,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
         // Warn player if the selected card is not valid
         } else {
-          // alert('Choose another card or go, this card would bust');
-          document.querySelector('#prompts .alert[data-type="bust"]').classList.remove('is-hidden');
+          storeCopy.alert = 'bust';
         }
 
       }
@@ -1255,23 +1296,26 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
 
     // Deal button event listener
     if (event.target.id === 'deal'){
+      updateGame = true;
       dealCards(storeCopy);
-
     }
 
     // Cut deck button event listener
     if (event.target.id === 'cut'){
+      updateGame = true;
       cutDeck(storeCopy);
-
     }
 
     // Go button event listener
     if (event.target.id === 'go'){
+      updateGame = true;
       go(storeCopy);
+      console.log(storeCopy.alert);
     }
 
     // TESTING
     if (event.target.id === 'switch'){
+      console.log(storeCopy.userIndex);
       let switchPlayer = function(){
         let index1 = storeCopy.userIndex;
         let index2 = storeCopy.oppoIndex;
@@ -1279,26 +1323,160 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getProfileData, g
         storeCopy.oppoIndex = index1;
       };
       switchPlayer();
+      console.log(storeCopy.userIndex);
     }
 
     // Check for end of game
-    if (storeCopy.game.players[storeCopy.userIndex].score == 121 || storeCopy.game.players[storeCopy.oppoIndex].score == 121){
+    if (storeCopy.game.players[storeCopy.userIndex].score >= 121 || storeCopy.game.players[storeCopy.oppoIndex].score >= 121){
+
       console.log('GAME END');
-      gameEnd(storeCopy);
+      let winner = {};
+      let loser = {};
+
+      // Update game data
+      if (storeCopy.game.players[storeCopy.userIndex].score >= 121){
+        storeCopy.game.winner = storeCopy.game.players[storeCopy.userIndex].username;
+        winner.id = 'user';
+        winner.index = userIndex;
+        loser.id = 'other';
+        loser.index = oppoIndex;
+      } else {
+        storeCopy.game.winner = storeCopy.game.players[storeCopy.oppoIndex].username;
+        winner.id = 'other';
+        winner.index = oppoIndex;
+        loser.id = 'user';
+        loser.index = userIndex;
+      }
+
+      // Reset game variables
+      storeCopy.game.turn = null;
+      storeCopy.game.dealer = null;
+      storeCopy.game.go = null;
+
+      storeCopy.game.data.completed = getData();
+
+      // Add final log
+      newLog(obj, obj.game.winner);
+
+      // Log stats
+      changeLog[loser.id].changes.push({
+        path: 'stats.loses',
+        value: 1,
+        type: 'plus'
+      })
+      changeLog[loser.id].changes.push({
+        path: 'stats.winStreak',
+        value: 0,
+        type: 'replace'
+      })
+      if (storeCopy.game.players[loser.index].score < 61){
+        changeLog[loser.id].changes.push({
+          path: 'stats.doubleSkunks',
+          value: 1,
+          type: 'plus'
+        })
+      } else if (storeCopy.game.players[loser.index].score < 91){
+        changeLog[loser.id].changes.push({
+          path: 'stats.skunks',
+          value: 1,
+          type: 'plus'
+        })
+      }
+      if (storeCopy.game.players[loser.index].highestHandScore > storeCopy.players[storeCopy.game.players[loser.index].username.toLowerCase()].stats.highestHandScore){
+        changeLog[loser.id].changes.push({
+          path: 'stats.highestHandScore',
+          value: storeCopy.game.players[loser.index].highestHandScore,
+          type: 'replace'
+        })
+      }
+      changeLog[winner.id].changes.push({
+        path: 'stats.wins',
+        value: 1,
+        type: 'plus'
+      })
+      changeLog[winner.id].changes.push({
+        path: 'stats.winStreak',
+        value: 1,
+        type: 'plus'
+      })
+      if ((storeCopy.game.players[winner.index].score - storeCopy.game.players[loser.index].score) > storeCopy.players[storeCopy.game.players[winner.index].username.toLowerCase()].stats.biggestLead){
+        changeLog[winner.id].changes.push({
+          path: 'stats.biggestLead',
+          value: storeCopy.game.players[winner.index].score - storeCopy.game.players[loser.index].score,
+          type: 'replace'
+        })
+      }
+      if (storeCopy.game.players[winner.index].highestHandScore > storeCopy.players[storeCopy.game.players[winner.index].username.toLowerCase()].stats.highestHandScore){
+        changeLog[winner.id].changes.push({
+          path: 'stats.highestHandScore',
+          value: storeCopy.game.players[winner.index].highestHandScore,
+          type: 'replace'
+        })
+      }
+
+      // Move the game to completed
+      changeLog.user.changes.push({
+        path: 'games.open',
+        value: changeLog.game.id,
+        type: 'remove'
+      })
+      changeLog.user.changes.push({
+        path: 'games.closed',
+        value: changeLog.game.id,
+        type: 'add'
+      })
+      changeLog.other.changes.push({
+        path: 'games.open',
+        value: changeLog.game.id,
+        type: 'remove'
+      })
+      changeLog.other.changes.push({
+        path: 'games.closed',
+        value: changeLog.game.id,
+        type: 'add'
+      })
+
+      // Reveal game end dialog
+      table.attach(gameEndDialog);
+      openDialog('game-end');
+
     }
 
-    // Update server with new game state and update UI
-    if (updateUser.changes.length > 0 || updateOther.changes.length > 0 || updateGame.changes.length > 0){
-      storeCopy.game.date.updated = getDate(true);
-      updateData(updateUser, updateOther, updateGame, function(type, data){
-        if (type == 'game'){
-          store.data.game = data;
-          console.log(store.data);
-          console.log(storeCopy);
-          store.data = storeCopy;
-        }
-      })
+
+    //
+    // API Updates
+    //
+
+    changeLog.game.changes.push({
+      path: null,
+      value: storeCopy.game,
+      type: 'replace'
+    })
+
+    let userData;
+    let otherData;
+    let gameData;
+
+    if (changeLog.user.changes.length > 0){
+      userData = await updateData(changeLog.user);
     }
+    if (changeLog.other.changes.length > 0){
+      otherData = await updateData(changeLog.other);
+    }
+    if (updateGame){
+      gameData = await updateData(changeLog.game);
+      console.log(gameData);
+    }
+
+    //
+    // UI Updates
+    //
+
+    if (gameData) {
+      store.data.game = storeCopy.game
+    }
+
+    store.data = storeCopy;
 
   })
 

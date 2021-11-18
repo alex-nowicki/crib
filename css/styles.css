@@ -312,7 +312,7 @@ input {
 ** DIALOG
 ------------------------------*/
 
-.dialog {
+#dialog {
   display: none;
   position: absolute;
   top: 0;
@@ -329,54 +329,46 @@ input {
   z-index: 1;
 }
 
-.dialog::before {
+#dialog::before {
   content: "";
   display: block;
   position: absolute;
   background: rgba(var(--gray-600-rgb), 0.9);
   z-index: -1;
-}
-
-.dialog.full::before {
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
 }
 
-.dialog p {
+#dialog p {
   font-size: 1.25rem;
   font-weight: 400;
   line-height: 1.2;
 }
 
-.dialog > div {
+#dialog > div {
   grid-area: dialog;
   width: 40rem;
   padding: 6rem;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s, margin 0.4s ease;
-  background: rgba(var(--gray-600-rgb), 0.9);
   border-radius: 0.75rem;
   position: relative;
 }
 
-.dialog > div.is-active {
+#dialog > div.is-active {
   opacity: 1;
   margin: 0;
   pointer-events: all;
 }
 
-.dialog.full > div {
-  background: none;
-}
-
-.dialog > div > *:first-child {
+#dialog > div > *:first-child {
   margin-top: 0;
 }
 
-.dialog > div > *:last-child {
+#dialog > div > *:last-child {
   margin-bottom: 0;
 }
 
@@ -674,7 +666,7 @@ button#new-game-open svg {
   grid-area: prompts;
 }
 
-#instructions {
+#prompts .instructions {
   display: inline-flex;
   flex-flow: row nowrap;
   align-items: center;
@@ -684,7 +676,7 @@ button#new-game-open svg {
   background-color: var(--gray-400);
 }
 
-#instructions > * {
+#prompts .instructions > * {
   margin: 0 0.75rem 0 0;
 }
 

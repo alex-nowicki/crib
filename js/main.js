@@ -575,6 +575,7 @@ const gameFactory = (id, player1, player2, dateCreated) => {
         "username": player1,
         "colour": "orange",
         "score": 0,
+        "highestHandScore": 0,
         "hand": [],
         "play": [],
         "discard": []
@@ -583,6 +584,7 @@ const gameFactory = (id, player1, player2, dateCreated) => {
         "username": player2,
         "colour": "green",
         "score": 0,
+        "highestHandScore": 0,
         "hand": [],
         "play": [],
         "discard": []
@@ -727,7 +729,7 @@ let clearLocalStorage = function() {
   }
 }
 
-let checkUsername = async function(username) {
+let checkPlayer = async function(username) {
   let response = await fetch(`https://crib.nowicki.workers.dev?player=${username.toLowerCase()}`);
   return response.ok;
 }
@@ -791,7 +793,7 @@ let updateData = async function(changes){
  * @param {Object} data - Player data object
  * @callback callback - Returns boolean
  */
-let createPlayer = async function(username, callback){
+let createPlayerData = async function(username, callback){
 
   let player = playerFactory(username);
 
@@ -818,7 +820,7 @@ let createPlayer = async function(username, callback){
  * @param {String} player2 - Username of player 2
  * @callback callback - Returns game object
  */
-let createGame = async function(player1, player2){
+let createGameData = async function(player1, player2){
   // Generate game id
   let id = false;
   while (!id) {
@@ -861,4 +863,4 @@ let createGame = async function(player1, player2){
 // Exports
 //
 
-export { cards, notificationFactory, checkLocalStorage, clearLocalStorage, checkUsername, checkGame, getDate, getDiffDate, getProfileData, getTableData, createGame, createPlayer, updateData };
+export { cards, notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer, checkGame, getDate, getDiffDate, getProfileData, getTableData, createGameData, createPlayerData, updateData };
