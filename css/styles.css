@@ -100,12 +100,12 @@ p.small {
   line-height: 1;
 }
 
-:is(ul > *, div > *):first-child {
-  margin-top: 0;
+:is(ul > *, li > *, div > *):first-child {
+  margin-top: 0 !important;
 }
 
-:is(ul > *, div > *):last-child {
-  margin-bottom: 0;
+:is(ul > *, li > *, div > *):last-child {
+  margin-bottom: 0 !important;
 }
 
 ul.lines {
@@ -313,7 +313,7 @@ input {
 ------------------------------*/
 
 #dialog {
-  display: none;
+  display: grid;
   position: absolute;
   top: 0;
   left: 0;
@@ -973,12 +973,9 @@ svg {
 ------------------------------*/
 
 .is-hidden {
-  display: none;
+  display: none !important;
 }
 
-.is-open {
-  display: grid;
-}
 
 
 
