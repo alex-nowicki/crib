@@ -18,6 +18,14 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       pane: null
     },
     alert: null,
+    icons: {
+      attention: `<svg class="icon-attention" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M27 27.29H2a2 2 0 0 1-1.73-3l12.5-21.65a2 2 0 0 1 3.46 0l12.5 21.65a2 2 0 0 1-1.73 3ZM14.5 3.64 2 25.29h25L14.5 3.64Zm-.87-.5Zm-.32 14.53c0 .58.46.95 1.2.95a1.07 1.07 0 0 0 1.18-.95c0-1 .05-2.13.11-3.27s.11-2.32.11-3.28a1.27 1.27 0 0 0-1.4-1.23 1.28 1.28 0 0 0-1.42 1.23c0 1 .06 2.14.11 3.28s.11 2.32.11 3.27Zm1.21 2.27A1.47 1.47 0 0 0 13 21.43a1.48 1.48 0 1 0 1.48-1.49Z"/></svg>`,
+      accept: `<svg class="icon-accept" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M21.88 9.32a1.24 1.24 0 0 1 0 1.76l-8.6 8.6a1.23 1.23 0 0 1-1.76 0l-4.4-4.4a1.24 1.24 0 1 1 1.76-1.76L12.4 17l7.72-7.71a1.24 1.24 0 0 1 1.76.03ZM28 14.5A13.5 13.5 0 1 1 14.5 1 13.49 13.49 0 0 1 28 14.5Zm-2 0A11.5 11.5 0 1 0 14.5 26 11.51 11.51 0 0 0 26 14.5Z"/></svg>`,
+      reject: `<svg class="icon-reject" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M19.88 9.12a1.24 1.24 0 0 1 0 1.76l-3.61 3.62 3.61 3.62a1.24 1.24 0 0 1 0 1.76 1.23 1.23 0 0 1-1.76 0l-3.62-3.61-3.62 3.61a1.23 1.23 0 0 1-1.76 0 1.24 1.24 0 0 1 0-1.76l3.61-3.62-3.61-3.62a1.24 1.24 0 0 1 1.76-1.76l3.62 3.61 3.62-3.61a1.24 1.24 0 0 1 1.76 0Zm8.12.62v9.52a2 2 0 0 1-.59 1.42l-6.73 6.73a2 2 0 0 1-1.42.59H9.74a2 2 0 0 1-1.42-.59l-6.73-6.73A2 2 0 0 1 1 19.26V9.74a2 2 0 0 1 .59-1.42l6.73-6.73A2 2 0 0 1 9.74 1h9.52a2 2 0 0 1 1.42.59l6.73 6.73A2 2 0 0 1 28 9.74Zm-2 0L19.26 3H9.74L3 9.74v9.52L9.74 26h9.52L26 19.26Z"/></svg>`,
+      turn: `<svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>`,
+      dealer: `<svg class="icon-dealer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg>`,
+      go: `<svg class="icon-go" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 29"><path d="M7.67 3.67c-3.2 0-5.11 1.72-5.11 5.47V20.3c0 3.74 1.91 5.5 5.11 5.5s5.12-1.76 5.12-5.5V16H8a.94.94 0 0 1-.86-1A.93.93 0 0 1 8 14h6.3a.85.85 0 0 1 .86.94v5.4c0 5.61-3.27 7.7-7.49 7.7S.19 25.91.19 20.3V9.14c0-5.58 3.27-7.67 7.45-7.67 4.61 0 7.52 2.63 7.52 6.23 0 .93-.47 1.22-1.19 1.22s-1.15-.25-1.18-.9c-.33-2.77-1.98-4.35-5.12-4.35ZM17.86 20.3V9.14c0-5.58 3.28-7.67 7.49-7.67s7.49 2.09 7.49 7.67V20.3c0 5.61-3.28 7.7-7.49 7.7s-7.49-2.09-7.49-7.7Zm12.6-11.16c0-3.75-1.91-5.47-5.11-5.47s-5.11 1.72-5.11 5.47V20.3c0 3.77 1.91 5.5 5.11 5.5s5.11-1.73 5.11-5.5Zm8.35 17.2A1.67 1.67 0 0 1 37.19 28a1.68 1.68 0 1 1 1.62-1.66ZM38.13 21a.91.91 0 0 1-1 .82.84.84 0 0 1-.94-.82c0-5.91-.43-12.71-.43-18.61a1.37 1.37 0 1 1 2.74 0c.03 5.92-.37 12.72-.37 18.61Z"/></svg>`
+    },
 
     // For switch player testing
     userIndex: null,
@@ -499,72 +507,68 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
 
     let run = findRunsHand(ranks);
 
-    if (triple.length == 1){
+    if (quadruple.length == 1){
+      // Four of a Kind
+      log.description.push('Four of a kind');
+      log.value += 12;
+    } else if (triple.length == 1){
       if (run.length == 3){
         // Triple Run of Three
-        console.log('SCORE: triple run of three');
         log.description.push('Triple run of three');
         log.value += 15;
+      } else if (double.length == 1) {
+        // Three of a Kind and a Two of a Kind
+        log.description.push('Three of a kind and two of a kind');
+        log.value += 8;
       } else {
         // Three of a Kind
-        console.log('SCORE: three of a kind');
         log.description.push('Three of a kind');
         log.value += 6;
       }
     } else if (double.length == 2){
       if (run.length == 3){
         // Quadruple Run of Three
-        console.log('SCORE: quadruple run of three');
         log.description.push('Quadruple run of three');
         log.value += 16;
       } else {
         // 2 x Two of a Kind
-        console.log('SCORE: 2 x two of a kind');
         log.description.push('2 Two of kinds');
         log.value += 4;
       }
     } else if (double.length == 1){
       if (run.length == 4){
         // Double Run of Four
-        console.log('SCORE: double run of four');
         log.description.push('Double run of four');
         log.value += 10;
       } else if (run.length == 3){
         if (run.includes(Number(double[0]))){
           // Double Run of Three
-          console.log('SCORE: double run of three');
           log.description.push('Double run of three');
           log.value += 8;
         } else {
           // Two of a Kind and a Run of Three
-          console.log('SCORE: two of a kind and a run of three');
           log.description.push('Two of a kind and a run of three');
           log.value += 5;
         }
       } else {
         // Two of a Kind
-        console.log('SCORE: two of a kind');
         log.description.push('Two of a kind');
         log.value += 2;
       }
     } else if (run.length == 3){
       // Run of Three
-      console.log('SCORE: run of three');
       log.description.push('Run of three');
       log.value += 3;
     } else if (run.length == 4){
       // Run of Four
-      console.log('SCORE: run of four');
       log.description.push('Run of four');
       log.value += 4;
     } else if (run.length == 5){
       // Run of Five
-      console.log('SCORE: run of five');
       log.description.push('Run of five');
       log.value += 5;
     }
 
-    console.log(`${name}'s hand score is ${log.value}`);
     newLog(obj, log.player, log.description, log.cards, log.value);
 
     return log.value;
@@ -651,7 +655,18 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       store: store,
       template: function(props) {
         return `
-          <div id="dialog" class="${props.dialog.pane == null ? `is-hidden` : ``}"></div>
+          <div id="dialog" class="${props.dialog.pane != null || props.game.phase == 'end' ? `` : `is-hidden`}">
+            <section id="game-end" class="${props.game.phase == 'end' ? `is-active` : `is-hidden`}">
+              <h1>${props.game.winner} Wins!</h1>
+              <p>Final score is ${props.game.players[1].score} (${props.game.players[1].username}) / ${props.game.players[2].score} (${props.game.players[2].username})</p>
+              <form action="">
+                <div class="flex-row">
+                  <button type="button" class="account big">My Account</button>
+                  <button type="button" class="logout big">Logout</button>
+                </div>
+              </form>
+            </section>
+          </div>
           <header>
             <section id="site-info">
               <a class="logo-group" href="http://nowickidesign.com/">
@@ -664,22 +679,14 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
             <section id="user-info" class="flex-row">
               <p>Game #${props.game.id}</p>
               <p>Logged in as ${props.user}</p>
-              <button type="button" id="logout">Logout</button>
+              <button type="button" class="account">My Account</button>
+              <button type="button" class="logout">Logout</button>
             </section>
           </header>
           <main id="table"></main>
-        `;
-      }
-    })
-
-    let dialog = new Reef('#dialog', {
-      store: store,
-      template: function(props) {
-        return `
-          <section id="game-end" class="${props.dialog.pane == 'game-end' ? `is-active` : `is-hidden`}">
-            <h1>Game end</h1>
-            <p>${props.game.winner} is the winner!</p>
-          </section>
+          <footer>
+            <p>© Nowicki Design ${new Date().getFullYear()}</p>
+          </footer>
         `;
       }
     })
@@ -743,37 +750,37 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
         return `
         <div class="instructions">
           ${props.game.phase == 'new' ? `
-            ${props.userIndex == 2 ? `
-              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+            ${props.game.turn == props.userIndex ? `
+              ${props.icons.turn}
               <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must cut the deck to determine the first dealer.</h3>
           ` : ''}
           ${props.game.phase == 'deal' ? `
             ${props.game.dealer == props.userIndex ? `
-              <svg class="icon-dealer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg>
+              ${props.icons.dealer}
               <h3>You are` : `<h3>${props.game.players[props.oppoIndex].username} is`} the dealer.</h3>
             ${props.game.dealer == props.userIndex ? `
-              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+              ${props.icons.turn}
               <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must shuffle and deal the cards.</h3>
           ` : ''}
           ${props.game.phase == 'crib' ? `
             ${props.game.turn == props.userIndex ? `
-              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+              ${props.icons.turn}
               <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must select two cards to add to ${props.game.dealer == props.userIndex ? 'your' : `their`} crib.</h3>
           ` : ''}
           ${props.game.phase == 'starter' ? `
             ${props.game.turn == props.userIndex ? `
-              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+              ${props.icons.turn}
               <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must cut the deck to reveal the starter.</h3>
           ` : ''}
           ${props.game.phase == 'play' ? `
             ${props.game.turn == props.userIndex ? `
-              <svg class="icon-turn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M14.5 1A13.5 13.5 0 1 0 28 14.5 13.49 13.49 0 0 0 14.5 1Zm0 25A11.5 11.5 0 1 1 26 14.5 11.51 11.51 0 0 1 14.5 26Zm5.25-10.5a1.25 1.25 0 0 1-1.25 1.25h-5a1.25 1.25 0 0 1-1.25-1.25v-7a1.25 1.25 0 0 1 2.5 0v5.75h3.75a1.25 1.25 0 0 1 1.25 1.25Z"/></svg>
+              ${props.icons.turn}
               <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must select a card to play or Go!</h3>
           ` : ''}
         </div>
         ${props.alert != null ? `
           <div class="alert reject flex-row" data-type="${props.alert}">
-            <svg class="icon-reject" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M19.88 9.12a1.24 1.24 0 0 1 0 1.76l-3.61 3.62 3.61 3.62a1.24 1.24 0 0 1 0 1.76 1.23 1.23 0 0 1-1.76 0l-3.62-3.61-3.62 3.61a1.23 1.23 0 0 1-1.76 0 1.24 1.24 0 0 1 0-1.76l3.61-3.62-3.61-3.62a1.24 1.24 0 0 1 1.76-1.76l3.62 3.61 3.62-3.61a1.24 1.24 0 0 1 1.76 0Zm8.12.62v9.52a2 2 0 0 1-.59 1.42l-6.73 6.73a2 2 0 0 1-1.42.59H9.74a2 2 0 0 1-1.42-.59l-6.73-6.73A2 2 0 0 1 1 19.26V9.74a2 2 0 0 1 .59-1.42l6.73-6.73A2 2 0 0 1 9.74 1h9.52a2 2 0 0 1 1.42.59l6.73 6.73A2 2 0 0 1 28 9.74Zm-2 0L19.26 3H9.74L3 9.74v9.52L9.74 26h9.52L26 19.26Z"/></svg>
+            ${props.icons.reject}
             ${props.alert == 'go' ? `<p>If you can play a card from your hand, you must!</p>` : ''}
             ${props.alert == 'bust' ? `<p>You can't play a card that will exceed 31!</p>` : ''}
           </div>
@@ -926,7 +933,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
             ${props.game.log.map(function(item, index){
               return `<li data-index="${index}">
                 <p class="date small">${item.date}</p>
-                ${item.phase == 'deal' ? `<p class="small">${item.player} is the dealer <svg class="icon-dealer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29"><path d="M22.38 28.38a1.76 1.76 0 0 1-.83-.21l-7-3.71-7 3.71A1.74 1.74 0 0 1 5.59 28a1.77 1.77 0 0 1-.7-1.72l1.35-7.86L.53 12.9a1.76 1.76 0 0 1-.44-1.81A1.73 1.73 0 0 1 1.51 9.9l7.88-1.15 3.53-7.15a1.77 1.77 0 0 1 1.58-1 1.76 1.76 0 0 1 1.58 1l3.53 7.15 7.88 1.15a1.73 1.73 0 0 1 1.42 1.19 1.76 1.76 0 0 1-.44 1.81l-5.71 5.56 1.35 7.86a1.77 1.77 0 0 1-1.73 2.06Zm-7.88-5.95a1.84 1.84 0 0 1 .82.2l6.73 3.55-1.28-7.5a1.76 1.76 0 0 1 .5-1.56l5.45-5.31-7.53-1.1a1.73 1.73 0 0 1-1.32-1L14.5 2.93l-3.37 6.82a1.73 1.73 0 0 1-1.32 1l-7.53 1.1 5.45 5.31a1.75 1.75 0 0 1 .5 1.55L7 26.18l6.73-3.55a1.84 1.84 0 0 1 .77-.2Z"/></svg></p>` : ''}
+                ${item.phase == 'deal' ? `<p class="small">${item.player} is the dealer ${props.icons.dealer}</p>` : ''}
                 ${item.phase == 'starter' ? `<p class="small">${item.player} cuts the deck, starter revealed</p>` : ''}
                 ${item.phase == 'play' ? `
                   ${item.value > 0 ? `
@@ -948,6 +955,9 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
                           return `${description}`
                         }).join(' / ')})</p>
                     ` : 'nothing'}
+                ` : ''}
+                ${item.phase == 'end' ? `
+                  <p class="small">${item.player} is the winner!</p>
                 ` : ''}
 
                 ${(item.cards.other != null || item.cards.starter != null) && index < 5 ? `
@@ -1061,17 +1071,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       attachTo: table
     })
 
-    let gameEndDialog = new Reef('#game-end', {
-      store: store,
-      template: function(props) {
-        return `
-          <h1>Game End</h1>
-          <p>${props.game.winner} is the winner!</p>
-          <button type="button">Return to Profile</button>
-        `;
-      }
-    })
-
   }
 
 
@@ -1093,7 +1092,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
     initTable();
   } else {
     window.location.replace(`/`);
-    // dialog.classList.toggle('is-open');
   }
 
   // Refresh game data every 10 seconds
@@ -1114,29 +1112,27 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
 
     // Create non-reactive store data object to make changes to
     let storeCopy = store.dataCopy;
-    console.log(store.data);
-    console.log(storeCopy);
+    let updateUI = false;
+    let updateGame = false;
 
     //
     // Alerts
     //
 
-    // Dismiss alert
+    // Dismiss active alert
     storeCopy.alert = null;
 
     //
     // Dialogs
     //
 
-    if (event.target.classList.contains('dialog-close')){
-      closeDialog();
-    }
+    // Button to return to profile
+
 
     //
     // Change Log
     //
 
-    let updateGame = false;
     let eventType;
     let changeLog = {
       user: {
@@ -1153,10 +1149,15 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       }
     }
 
-    if (event.target.id === 'logout') {
+    if (event.target.classList.contains('logout')) {
       clearLocalStorage();
       window.location.replace('/');
     }
+
+    if (event.target.classList.contains('account')) {
+      window.location.replace('/');
+    }
+
 
     // Card event listeners
     if (event.target.classList.contains('card')){
@@ -1171,7 +1172,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       }
 
       if (storeCopy.game.phase === 'crib') {
-
+        updateUI = true;
         updateGame = true;
 
         // Add selected card to the crib
@@ -1198,10 +1199,10 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
         }
 
       } else if (storeCopy.game.phase === 'play') {
+        updateUI = true;
 
         // Check whether it's the player's turn and the selected card is valid
         if (storeCopy.game.turn == storeCopy.userIndex && (Number(targetCard.value) + storeCopy.game.tally) < 32){
-
           updateGame = true;
 
           //Add the card to the play area and remove from hand
@@ -1303,8 +1304,9 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
 
           // If one player has passed, and the other no longer has a valid card to play
         } else if (storeCopy.game.go !== null && !checkValidPlay(storeCopy, storeCopy.userIndex)) {
-            console.log('ROUND END: EXTENDED GO');
-            playEnd(storeCopy);
+          updateGame = true;
+          console.log('ROUND END: EXTENDED GO');
+          playEnd(storeCopy);
 
           // If both players no longer have cards, end the play phase
           } else if (storeCopy.game.players[storeCopy.userIndex].hand.length === 0 && storeCopy.game.players[storeCopy.oppoIndex].hand.length === 0){
@@ -1325,18 +1327,21 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
 
     // Deal button event listener
     if (event.target.id === 'deal'){
+      updateUI = true;
       updateGame = true;
       dealCards(storeCopy);
     }
 
     // Cut deck button event listener
     if (event.target.id === 'cut'){
+      updateUI = true;
       updateGame = true;
       cutDeck(storeCopy);
     }
 
     // Go button event listener
     if (event.target.id === 'go'){
+      updateUI = true;
       updateGame = true;
       go(storeCopy);
       console.log(storeCopy.alert);
@@ -1344,7 +1349,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
 
     // TESTING
     if (event.target.id === 'switch'){
-      console.log(storeCopy.userIndex);
+      updateUI = true;
       let switchPlayer = function(){
         let index1 = storeCopy.userIndex;
         let index2 = storeCopy.oppoIndex;
@@ -1352,11 +1357,14 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
         storeCopy.oppoIndex = index1;
       };
       switchPlayer();
-      console.log(storeCopy.userIndex);
     }
 
     // Check for end of game
-    if (storeCopy.game.players[storeCopy.userIndex].score >= 121 || storeCopy.game.players[storeCopy.oppoIndex].score >= 121){
+    if (storeCopy.game.winner == null && (storeCopy.game.players[storeCopy.userIndex].score >= 31 || storeCopy.game.players[storeCopy.oppoIndex].score >= 31)){
+      updateUI = true;
+      updateGame = true;
+
+      storeCopy.game.phase = 'end';
 
       console.log('GAME END');
       let winner = {};
@@ -1366,15 +1374,15 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       if (storeCopy.game.players[storeCopy.userIndex].score >= 121){
         storeCopy.game.winner = storeCopy.game.players[storeCopy.userIndex].username;
         winner.id = 'user';
-        winner.index = userIndex;
+        winner.index = storeCopy.userIndex;
         loser.id = 'other';
-        loser.index = oppoIndex;
+        loser.index = storeCopy.oppoIndex;
       } else {
         storeCopy.game.winner = storeCopy.game.players[storeCopy.oppoIndex].username;
         winner.id = 'other';
-        winner.index = oppoIndex;
+        winner.index = storeCopy.oppoIndex;
         loser.id = 'user';
-        loser.index = userIndex;
+        loser.index = storeCopy.userIndex;
       }
 
       // Reset game variables
@@ -1382,10 +1390,10 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       storeCopy.game.dealer = null;
       storeCopy.game.go = null;
 
-      storeCopy.game.data.completed = getData();
+      storeCopy.game.date.completed = getDate(true);
 
       // Add final log
-      newLog(obj, obj.game.winner);
+      newLog(storeCopy, storeCopy.game.winner);
 
       // Log stats
       changeLog[loser.id].changes.push({
@@ -1466,8 +1474,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       })
 
       // Reveal game end dialog
-      table.attach(gameEndDialog);
-      openDialog('game-end');
+      storeCopy.dialog.pane = 'game-end';
 
     }
 
@@ -1476,36 +1483,56 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
     // API Updates
     //
 
-    changeLog.game.changes.push({
-      path: null,
-      value: storeCopy.game,
-      type: 'replace'
-    })
-
-    let userData;
-    let otherData;
-    let gameData;
+    // let userData;
+    // let otherData;
+    // let gameData;
 
     if (changeLog.user.changes.length > 0){
-      userData = await updateData(changeLog.user);
+      try {
+        updateData(changeLog.user);
+      } catch {
+        console.error(error);
+      }
     }
     if (changeLog.other.changes.length > 0){
-      otherData = await updateData(changeLog.other);
+      try {
+        updateData(changeLog.other);
+      } catch {
+        console.error(error);
+      }
     }
     if (updateGame){
-      gameData = await updateData(changeLog.game);
-      console.log(gameData);
+      storeCopy.game.date.updated = getDate(true);
+      changeLog.game.changes.push({
+        path: null,
+        value: storeCopy.game,
+        type: 'replace'
+      })
+      try {
+        updateData(changeLog.game);
+      } catch {
+        console.error(error);
+        // Show dialog and prompt user to refresh
+
+      }
+      // gameData = await updateData(changeLog.game);
+      // console.log(gameData);
     }
 
     //
     // UI Updates
     //
 
-    if (gameData) {
+    if (updateGame) {
       store.data.game = storeCopy.game
     }
 
-    store.data = storeCopy;
+    if (updateUI) {
+      console.log('Original', store.data);
+      console.log('Changed', storeCopy);
+      store.data = storeCopy;
+    }
+
 
   })
 

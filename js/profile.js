@@ -63,6 +63,160 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     data: {}
   })
 
+  let app = new Reef('#app', {
+    store: store,
+    template: function(props) {
+      return `
+      <div id="dialog" class="${props.dialog.pane == null ? `is-hidden` : ``}"></div>
+      <header>
+        <section id="site-info">
+          <a class="logo-group" href="http://nowickidesign.com/">
+            <svg class="logo" viewBox="0 0 100 33.46">
+              <path d="M14.68,18.42,9.57,21.37V13.49a2.16,2.16,0,0,0-2.16-2.36,2,2,0,0,0-2,2.19v8.05H0V7H5.36V8.46A5.05,5.05,0,0,1,9.41,6.69a5.2,5.2,0,0,1,5.27,5.55Zm9.64,3.28c4.38,0,8.07-3.44,8.07-7.52S28.7,6.69,24.32,6.69s-8.1,3.41-8.1,7.49S19.91,21.7,24.32,21.7Zm0-4.44a3.07,3.07,0,1,1,3.08-3.08A3.13,3.13,0,0,1,24.32,17.26ZM37,21.37H41.7L43.59,14l1.94,7.38h4.74L55.16,7H50l-2.1,7.16L45.78,7H41.39l-2.11,7.16L37.15,7H32ZM59,5.49a2.77,2.77,0,0,0,2.72-2.77,2.75,2.75,0,0,0-5.5,0A2.78,2.78,0,0,0,59,5.49ZM56.31,21.37h5.36V7H56.31Zm14.92.33A7.82,7.82,0,0,0,77.37,19l-3.53-2.83a3.62,3.62,0,0,1-2.55,1.14,3.08,3.08,0,0,1-3-3.11,3,3,0,0,1,3-3,3.55,3.55,0,0,1,2.5,1.11l3.52-2.89a7.64,7.64,0,0,0-6-2.66c-4.42,0-8.13,3.41-8.13,7.49S66.88,21.7,71.23,21.7Zm17.41-8.49,5-6.19h-6L84,12.07V.69L78.62,3.78V21.37H84v-3.3l1.16-1.45,2.64,4.75h6Zm8.64-7.72A2.77,2.77,0,0,0,100,2.72a2.75,2.75,0,0,0-5.49,0A2.78,2.78,0,0,0,97.28,5.49ZM94.56,21.37h5.36V7H94.56ZM14.68,23.68h0v7.39h-.86v-1.4a3,3,0,0,1-2.68,1.57,3.47,3.47,0,0,1-3.28-3.76,3.47,3.47,0,0,1,3.28-3.75,3,3,0,0,1,2.68,1.57V21.37l.86-.5Zm-.86,3.8c0-1.74-1-3-2.53-3a2.71,2.71,0,0,0-2.54,3,2.73,2.73,0,0,0,2.54,3C12.78,30.45,13.82,29.21,13.82,27.48Zm5.86,3A2.77,2.77,0,0,1,17,27.82H23c0-2.47-1.28-4.09-3.4-4.09a3.61,3.61,0,0,0-3.54,3.73,3.7,3.7,0,0,0,3.6,3.78,4.39,4.39,0,0,0,2.93-1.11l-.55-.59A3.46,3.46,0,0,1,19.68,30.45Zm0-5.93A2.47,2.47,0,0,1,22.16,27H17A2.71,2.71,0,0,1,19.65,24.52Zm7.21,6.72c1.44,0,2.58-.85,2.58-2.07s-1-1.71-2.35-2.13-2-.74-2-1.4.74-1.12,1.61-1.12a4.22,4.22,0,0,1,2.14.68l.43-.67a4.8,4.8,0,0,0-2.57-.8,2.21,2.21,0,0,0-2.47,2c0,1,.68,1.56,2.4,2.05,1.14.35,1.91.69,1.91,1.46s-.74,1.2-1.72,1.2a4.42,4.42,0,0,1-2.52-.92l-.45.64A4.87,4.87,0,0,0,26.86,31.24Zm4.3-8.75a.59.59,0,0,0,.6-.59.6.6,0,1,0-1.2,0A.59.59,0,0,0,31.16,22.49Zm-.43,8.58h.86V23.9h-.86Zm8.12-7.17v1.36a3,3,0,0,0-2.74-1.53,3.24,3.24,0,0,0-3.24,3.4,3.24,3.24,0,0,0,3.24,3.41A3.06,3.06,0,0,0,38.85,29v1.31c0,1.45-1,2.35-2.68,2.35a3.75,3.75,0,0,1-2.41-.85l-.39.69a4.73,4.73,0,0,0,2.9,1,3.17,3.17,0,0,0,3.44-3.15V23.9Zm-2.58,5.85a2.62,2.62,0,1,1,2.58-2.62A2.51,2.51,0,0,1,36.27,29.75Zm8.47-6a2.6,2.6,0,0,0-2.36,1.34V23.9h-.86v7.17h.86V26.5a2.11,2.11,0,0,1,2.25-2,1.92,1.92,0,0,1,1.94,2.05v4.5h.86V26.46A2.6,2.6,0,0,0,44.74,23.73Z"/>
+            </svg>
+          </a>
+        </section>
+        <section id="user-info" class="flex-row">
+          ${props.user.username ? `<button type="button" id="logout">Logout</button>` : ''}
+        </section>
+      </header>
+      <main id="profile"></main>
+      <footer>
+        <p>© Nowicki Design ${new Date().getFullYear()}</p>
+      </footer>
+      `;
+    }
+  })
+
+  let dialog = new Reef('#dialog', {
+    store: store,
+    template: function(props) {
+      return `
+          <section id="login" class="${props.dialog.pane == 'login' ? `is-active` : `is-hidden`}">
+            <h1>Login</h1>
+            <form action="">
+              <label for="username">Username</label><br>
+              <input type="text" id="login-field" name="username" value=""><br>
+              <button type="button" id="login-submit" class="big">Login</button>
+                <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
+                  ${props.icons.attention}
+                  <p>${props.dialog.alert.text ? props.dialog.alert.text : `User does not exist.`}</p>
+                </div>
+                <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
+                  ${props.icons.accept}
+                  <p>Login successful.</p>
+                </div>
+            </form>
+            <p>Don't have an account? <a class="login-toggle">Sign up</a></p>
+          </section>
+
+        <section id="signup" class="${props.dialog.pane == 'signup' ? `is-active` : `is-hidden`}">
+          <h1>Sign up</h1>
+          <p>Note: Username cannot exceed 20 characters</p>
+          <form action="">
+            <label for="username">Username</label><br>
+            <input type="text" id="signup-field" name="username" value=""><br>
+            <button type="button" id="signup-submit" class="big">Create Account</button>
+            <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
+              ${props.icons.attention}
+              <p>${props.dialog.alert.text ? props.dialog.alert.text : `User does not exist.`}</p>
+            </div>
+            <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
+              ${props.icons.accept}
+              <p>Account created.</p>
+            </div>
+            <div class="alert reject flex-row ${props.dialog.alert.type == 'reject' ? `` : `is-hidden`}">
+              ${props.icons.reject}
+              <p>Username already in use, please choose another.</p>
+            </div>
+          </form>
+          <p>Already have an account? <a class="login-toggle">Login</a></p>
+        </section>
+
+        <section id="new-game" class="${props.dialog.pane == 'new-game' ? `is-active` : `is-hidden`}">
+          <h1>New game</h1>
+          <p>Type the username of the person you want to invite to a game:</p>
+          <form action="">
+            <label for="username">Username</label><br>
+            <input type="text" id="new-game-field" name="username" value=""><br>
+            <div class="flex-row">
+              <button type="button" id="new-game-submit" class="big">Send Request</button>
+              <button type="button" class="big cancel">Cancel</button>
+            </div>
+            <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
+              ${props.icons.attention}
+              <p>${props.dialog.alert.text ? props.dialog.alert.text : `User does not exist.`}</p>
+            </div>
+            <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
+              ${props.icons.accept}
+              <p>Game request sent.</p>
+            </div>
+            <div class="alert reject flex-row ${props.dialog.alert.type == 'reject' ? `` : `is-hidden`}">
+              ${props.icons.reject}
+              <p>Game request not sent. User is blocked.</p>
+            </div>
+          </form>
+        </section>
+
+        <section id="add-friend"  class="${props.dialog.pane == 'add-friend' ? `is-active` : `is-hidden`}">
+          <h1>Add friend</h1>
+          <p>Type the username of the person you want to add as a friend:</p>
+          <form action="">
+            <label for="username">Username</label><br>
+            <input type="text" id="add-friend-field" name="username" value=""><br>
+            <div class="flex-row">
+              <button type="button" id="add-friend-submit" class="big">Send Request</button>
+              <button type="button" class="big cancel">Cancel</button>
+            </div>
+            <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
+              ${props.icons.attention}
+              <p>${props.dialog.alert.text ? props.dialog.alert.text : `User does not exist.`}</p>
+            </div>
+            <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
+              ${props.icons.accept}
+              <p>Friend request sent.</p>
+            </div>
+            <div class="alert reject flex-row ${props.dialog.alert.type == 'reject' ? `` : `is-hidden`}">
+              ${props.icons.reject}
+              <p>Friend request not sent. User is blocked.</p>
+            </div>
+          </form>
+        </section>
+
+        <section id="confirm-block" class="${props.dialog.pane == 'confirm-block' ? `is-active` : `is-hidden`}">
+          <h1>Block user</h1>
+          <p>Are you sure you want to block this user? They will no longer be able to send you friend or game requests.</p>
+          <div class="alert attention flex-row">
+            ${props.icons.attention}
+            <p>This action can't be undone.</p>
+          </div>
+          <form action="">
+            <div class="flex-row">
+              <button type="button" class="big confirm" data-type="block" data-index="${props.dialog.index}">Confirm</button>
+              <button type="button" class="big cancel">Cancel</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="confirm-leave" class="${props.dialog.pane == 'confirm-leave' ? `is-active` : `is-hidden`}">
+          <h1>Leave game</h1>
+          <p>Are you sure you want to leave this game? You will forfeit the game.</p>
+          <div class="alert attention flex-row">
+            ${props.icons.attention}
+            <p>This action can't be undone.</p>
+          </div>
+          <form action="">
+            <div class="flex-row">
+              <button type="button" class="big confirm" data-type="leave" data-index="${props.dialog.index}">Confirm</button>
+              <button type="button" class="big cancel">Cancel</button>
+            </div>
+          </form>
+        </section>
+
+      `;
+    }
+  })
+
   let initProfile = async function(user) {
 
     try {
@@ -74,152 +228,6 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     }
 
     console.log(store.data);
-
-    let app = new Reef('#app', {
-      store: store,
-      template: function(props) {
-        return `
-        <div id="dialog" class="${props.dialog.pane == null ? `is-hidden` : ``}"></div>
-        <header>
-          <section id="site-info">
-            <a class="logo-group" href="http://nowickidesign.com/">
-              <svg class="logo" viewBox="0 0 100 33.46">
-                <path d="M14.68,18.42,9.57,21.37V13.49a2.16,2.16,0,0,0-2.16-2.36,2,2,0,0,0-2,2.19v8.05H0V7H5.36V8.46A5.05,5.05,0,0,1,9.41,6.69a5.2,5.2,0,0,1,5.27,5.55Zm9.64,3.28c4.38,0,8.07-3.44,8.07-7.52S28.7,6.69,24.32,6.69s-8.1,3.41-8.1,7.49S19.91,21.7,24.32,21.7Zm0-4.44a3.07,3.07,0,1,1,3.08-3.08A3.13,3.13,0,0,1,24.32,17.26ZM37,21.37H41.7L43.59,14l1.94,7.38h4.74L55.16,7H50l-2.1,7.16L45.78,7H41.39l-2.11,7.16L37.15,7H32ZM59,5.49a2.77,2.77,0,0,0,2.72-2.77,2.75,2.75,0,0,0-5.5,0A2.78,2.78,0,0,0,59,5.49ZM56.31,21.37h5.36V7H56.31Zm14.92.33A7.82,7.82,0,0,0,77.37,19l-3.53-2.83a3.62,3.62,0,0,1-2.55,1.14,3.08,3.08,0,0,1-3-3.11,3,3,0,0,1,3-3,3.55,3.55,0,0,1,2.5,1.11l3.52-2.89a7.64,7.64,0,0,0-6-2.66c-4.42,0-8.13,3.41-8.13,7.49S66.88,21.7,71.23,21.7Zm17.41-8.49,5-6.19h-6L84,12.07V.69L78.62,3.78V21.37H84v-3.3l1.16-1.45,2.64,4.75h6Zm8.64-7.72A2.77,2.77,0,0,0,100,2.72a2.75,2.75,0,0,0-5.49,0A2.78,2.78,0,0,0,97.28,5.49ZM94.56,21.37h5.36V7H94.56ZM14.68,23.68h0v7.39h-.86v-1.4a3,3,0,0,1-2.68,1.57,3.47,3.47,0,0,1-3.28-3.76,3.47,3.47,0,0,1,3.28-3.75,3,3,0,0,1,2.68,1.57V21.37l.86-.5Zm-.86,3.8c0-1.74-1-3-2.53-3a2.71,2.71,0,0,0-2.54,3,2.73,2.73,0,0,0,2.54,3C12.78,30.45,13.82,29.21,13.82,27.48Zm5.86,3A2.77,2.77,0,0,1,17,27.82H23c0-2.47-1.28-4.09-3.4-4.09a3.61,3.61,0,0,0-3.54,3.73,3.7,3.7,0,0,0,3.6,3.78,4.39,4.39,0,0,0,2.93-1.11l-.55-.59A3.46,3.46,0,0,1,19.68,30.45Zm0-5.93A2.47,2.47,0,0,1,22.16,27H17A2.71,2.71,0,0,1,19.65,24.52Zm7.21,6.72c1.44,0,2.58-.85,2.58-2.07s-1-1.71-2.35-2.13-2-.74-2-1.4.74-1.12,1.61-1.12a4.22,4.22,0,0,1,2.14.68l.43-.67a4.8,4.8,0,0,0-2.57-.8,2.21,2.21,0,0,0-2.47,2c0,1,.68,1.56,2.4,2.05,1.14.35,1.91.69,1.91,1.46s-.74,1.2-1.72,1.2a4.42,4.42,0,0,1-2.52-.92l-.45.64A4.87,4.87,0,0,0,26.86,31.24Zm4.3-8.75a.59.59,0,0,0,.6-.59.6.6,0,1,0-1.2,0A.59.59,0,0,0,31.16,22.49Zm-.43,8.58h.86V23.9h-.86Zm8.12-7.17v1.36a3,3,0,0,0-2.74-1.53,3.24,3.24,0,0,0-3.24,3.4,3.24,3.24,0,0,0,3.24,3.41A3.06,3.06,0,0,0,38.85,29v1.31c0,1.45-1,2.35-2.68,2.35a3.75,3.75,0,0,1-2.41-.85l-.39.69a4.73,4.73,0,0,0,2.9,1,3.17,3.17,0,0,0,3.44-3.15V23.9Zm-2.58,5.85a2.62,2.62,0,1,1,2.58-2.62A2.51,2.51,0,0,1,36.27,29.75Zm8.47-6a2.6,2.6,0,0,0-2.36,1.34V23.9h-.86v7.17h.86V26.5a2.11,2.11,0,0,1,2.25-2,1.92,1.92,0,0,1,1.94,2.05v4.5h.86V26.46A2.6,2.6,0,0,0,44.74,23.73Z"/>
-              </svg>
-            </a>
-          </section>
-          <section id="user-info" class="flex-row">
-            ${props.user.username ? `<button type="button" id="logout">Logout</button>` : ''}
-          </section>
-        </header>
-        <main id="profile"></main>
-        `;
-      }
-    })
-
-    let dialog = new Reef('#dialog', {
-      store: store,
-      template: function(props) {
-        return `
-            <section id="login" class="${props.dialog.pane == 'login' ? `is-active` : `is-hidden`}">
-              <h1>Login</h1>
-              <form action="">
-                <label for="username">Username</label><br>
-                <input type="text" id="login-field" name="username" value=""><br>
-                <button type="button" id="login-submit" class="big">Login</button>
-                  <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
-                    ${props.icons.attention}
-                    <p>User does not exist.</p>
-                  </div>
-                  <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
-                    ${props.icons.accept}
-                    <p>Login successful.</p>
-                  </div>
-              </form>
-              <p>Don't have an account? <a class="login-toggle">Sign up</a></p>
-            </section>
-
-          <section id="signup" class="${props.dialog.pane == 'signup' ? `is-active` : `is-hidden`}">
-            <h1>Sign up</h1>
-            <form action="">
-              <label for="username">Username</label><br>
-              <input type="text" id="signup-field" name="username" value=""><br>
-              <button type="button" id="signup-submit" class="big">Create Account</button>
-              <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
-                ${props.icons.accept}
-                <p>Account created.</p>
-              </div>
-              <div class="alert reject flex-row ${props.dialog.alert.type == 'reject' ? `` : `is-hidden`}">
-                ${props.icons.reject}
-                <p>Username already in use, please choose another.</p>
-              </div>
-            </form>
-            <p>Already have an account? <a class="login-toggle">Login</a></p>
-          </section>
-
-          <section id="new-game" class="${props.dialog.pane == 'new-game' ? `is-active` : `is-hidden`}">
-            <h1>New game</h1>
-            <p>Type the username of the person you want to invite to a game:</p>
-            <form action="">
-              <label for="username">Username</label><br>
-              <input type="text" id="new-game-field" name="username" value=""><br>
-              <div class="flex-row">
-                <button type="button" id="new-game-submit" class="big">Send Request</button>
-                <button type="button" class="big cancel">Cancel</button>
-              </div>
-              <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
-                ${props.icons.attention}
-                <p>${props.dialog.alert.text ? props.dialog.alert.text : `User does not exist.`}</p>
-              </div>
-              <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
-                ${props.icons.accept}
-                <p>Game request sent.</p>
-              </div>
-              <div class="alert reject flex-row ${props.dialog.alert.type == 'reject' ? `` : `is-hidden`}">
-                ${props.icons.reject}
-                <p>Game request not sent. User is blocked.</p>
-              </div>
-            </form>
-          </section>
-
-          <section id="add-friend"  class="${props.dialog.pane == 'add-friend' ? `is-active` : `is-hidden`}">
-            <h1>Add friend</h1>
-            <p>Type the username of the person you want to add as a friend:</p>
-            <form action="">
-              <label for="username">Username</label><br>
-              <input type="text" id="add-friend-field" name="username" value=""><br>
-              <div class="flex-row">
-                <button type="button" id="add-friend-submit" class="big">Send Request</button>
-                <button type="button" class="big cancel">Cancel</button>
-              </div>
-              <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
-                ${props.icons.attention}
-                <p>${props.dialog.alert.text ? props.dialog.alert.text : `User does not exist.`}</p>
-              </div>
-              <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
-                ${props.icons.accept}
-                <p>Friend request sent.</p>
-              </div>
-              <div class="alert reject flex-row ${props.dialog.alert.type == 'reject' ? `` : `is-hidden`}">
-                ${props.icons.reject}
-                <p>Friend request not sent. User is blocked.</p>
-              </div>
-            </form>
-          </section>
-
-          <section id="confirm-block" class="${props.dialog.pane == 'confirm-block' ? `is-active` : `is-hidden`}">
-            <h1>Block user</h1>
-            <p>Are you sure you want to block this user? They will no longer be able to send you friend or game requests.</p>
-            <div class="alert attention flex-row">
-              ${props.icons.attention}
-              <p>This action can't be undone.</p>
-            </div>
-            <form action="">
-              <div class="flex-row">
-                <button type="button" class="big confirm" data-type="block" data-index="${props.dialog.index}">Confirm</button>
-                <button type="button" class="big cancel">Cancel</button>
-              </div>
-            </form>
-          </section>
-
-          <section id="confirm-leave" class="${props.dialog.pane == 'confirm-leave' ? `is-active` : `is-hidden`}">
-            <h1>Leave game</h1>
-            <p>Are you sure you want to leave this game? You will forfeit the game.</p>
-            <div class="alert attention flex-row">
-              ${props.icons.attention}
-              <p>This action can't be undone.</p>
-            </div>
-            <form action="">
-              <div class="flex-row">
-                <button type="button" class="big confirm" data-type="leave" data-index="${props.dialog.index}">Confirm</button>
-                <button type="button" class="big cancel">Cancel</button>
-              </div>
-            </form>
-          </section>
-
-        `;
-      }
-    })
 
     let profile = new Reef('main', {
       store: store,
@@ -243,8 +251,8 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
               ${props.games.open.map(function(game, index){
                 return `<li class="game ${props.filter == 'all' || props.filter == 'active' || (props.filter == 'turn' && (game.turn != null && game.players[game.turn].username == props.user.username)) ? `` : `is-hidden`}" data-active data-index="${index}" ${game.turn != null && game.players[game.turn].username == props.user.username ? 'data-turn' : ''}>
                   <div class="box-header flex-row">
-                    <h3>${game.players[1].username != null ? `${game.players[1].username}` : '?'} vs ${game.players[2].username != null ? `${game.players[2].username}` : '?'}</h3>
-                    <div class="icon-group flex-row ${game.turn == user ? '' : 'is-hidden'}">
+                    <h3>${game.players[1].username} vs ${game.players[2].username}</h3>
+                    <div class="icon-group flex-row ${game.turn && game.players[game.turn].username == props.user.username ? '' : 'is-hidden'}">
                       <p class="date">${getDiffDate(game.date.updated)}</p>
                       ${props.icons.turn}
                     </div>
@@ -451,7 +459,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     user = user.toLowerCase();
     initProfile(user);
   } else {
-    storeCopy.dialog.pane = 'login';
+    store.data.dialog.pane = 'login';
   }
 
   // Refresh profile data every 10 seconds
@@ -496,13 +504,18 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     if (event.target.classList.contains('login-toggle')) {
       updateUI = true;
       storeCopy.dialog.pane == 'login' ? storeCopy.dialog.pane = 'signup' : storeCopy.dialog.pane = 'login';
+      storeCopy.dialog.alert.type = null;
+      storeCopy.dialog.alert.text = null;
     }
 
     if (event.target.id === 'login-submit'){
       updateUI = true;
       event.preventDefault()
       let username = document.querySelector('#login-field').value;
-      if (await checkPlayer(username)){
+      if (username.length == 0){
+        storeCopy.dialog.alert.text = `You must type in a username.`;
+        storeCopy.dialog.alert.type = 'attention';
+      } else if (await checkPlayer(username)){
         user = username.toLowerCase();
         localStorage.setItem('user', username);
         initProfile(user);
@@ -512,7 +525,8 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
         storeCopy.dialog.alert.text = null;
       } else {
         // Trigger alert
-        storeCopy.dialog.alert.type ='attention';
+        storeCopy.dialog.alert.type = 'attention';
+        storeCopy.dialog.alert.text = null;
       }
     }
 
@@ -520,7 +534,13 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       updateUI = true;
       event.preventDefault()
       let username = document.querySelector('#signup-field').value;
-      if (await checkPlayer(username)){
+      if (username.length == 0){
+        storeCopy.dialog.alert.text = `You must type in a username.`;
+        storeCopy.dialog.alert.type = 'attention';
+      } else if (username.length > 20) {
+        storeCopy.dialog.alert.text = `Your username cannot exceed 20 characters.`;
+        storeCopy.dialog.alert.type = 'attention';
+      } else if (!(await checkPlayer(username))){
         let player = await createPlayerData(username);
         if (player){
           localStorage.setItem('user', username);
@@ -535,6 +555,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       } else {
         // Trigger alert
         storeCopy.dialog.alert.type ='reject';
+        storeCopy.dialog.alert.text = null;
       }
     }
 
@@ -597,23 +618,23 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       let friendsLowerCase = storeCopy.user.friends.map(name => name.toLowerCase());
       let blockedLowerCase = storeCopy.user.blocked.map(name => name.toLowerCase());
 
-      storeCopy.dialog.alert.type =null;
+      storeCopy.dialog.alert.type = null;
       let username = document.querySelector(`#${selector}-field`).value;
 
       if (username.length == 0){
-        storeCopy.dialog.alert.text =`You must type in a username.`;
-        storeCopy.dialog.alert.type ='attention';
+        storeCopy.dialog.alert.text = `You must type in a username.`;
+        storeCopy.dialog.alert.type = 'attention';
 
       } else if (blockedLowerCase.includes(username.toLowerCase())){
-        storeCopy.dialog.alert.type ='reject';
+        storeCopy.dialog.alert.type = 'reject';
 
       } else if (storeCopy.user.username.toLowerCase() == username.toLowerCase()){
-        storeCopy.dialog.alert.text =`You can't send a request to yourself.`;
-        storeCopy.dialog.alert.type ='attention';
+        storeCopy.dialog.alert.text = `You can't send a request to yourself.`;
+        storeCopy.dialog.alert.type = 'attention';
 
       } else if (event.target.id == 'add-friend-submit' && friendsLowerCase.includes(username.toLowerCase())){
-        storeCopy.dialog.alert.text =`You are already friends with this user.`;
-        storeCopy.dialog.alert.type ='attention';
+        storeCopy.dialog.alert.text = `You are already friends with this user.`;
+        storeCopy.dialog.alert.type = 'attention';
 
       } else {
 
@@ -708,7 +729,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
         // Move all non-request notifications to read
         let length = storeCopy.user.notifications.unread.length;
         for (let i = length - 1; i > -1; i--){
-          if (storeCopy.user.notifications.unread[i].type !== 'received'){
+          if (!((storeCopy.user.notifications.unread[i].type == 'game' || storeCopy.user.notifications.unread[i].type == 'friend') && storeCopy.user.notifications.unread[i].status == 'received')){
             storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
             storeCopy.user.notifications.unread.splice(i, 1);
           }
@@ -829,10 +850,10 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
         if (storeCopy.games.open[index].players[1].username.toLowerCase() != storeCopy.user.username.toLowerCase()){
           changeLog.other.username = storeCopy.games.open[index].players[1].username.toLowerCase();
-          otherUsername = storeCopy.games.open[index].players[2].username;
+          otherUsername = storeCopy.games.open[index].players[1].username;
         } else {
           changeLog.other.username = storeCopy.games.open[index].players[2].username.toLowerCase();
-          otherUsername = storeCopy.games.open[index].players[1].username;
+          otherUsername = storeCopy.games.open[index].players[2].username;
         }
 
         changeLog.game.changes.push({
@@ -931,7 +952,8 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
         // Remove all notifications from that user
         let length = storeCopy.user.notifications.unread.length;
         for (let i = length - 1; i > -1; i--){
-          if (storeCopy.user.notifications.unread[i].sender == changeLog.other.username){
+          if (storeCopy.user.notifications.unread[i].sender.toLowerCase() == changeLog.other.username){
+            console.log(storeCopy.user.notifications.unread[i]);
             storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
             storeCopy.user.notifications.unread.splice(i, 1);
           }

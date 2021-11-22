@@ -596,7 +596,7 @@ const gameFactory = (id, player1, player2, dateCreated) => {
     "starter": {},
     "tally": 0,
     "dealer": null,
-    "turn": null,
+    "turn": 2,
     "go": null,
     "phase": "new",
     "log": [],
@@ -691,7 +691,7 @@ let setObjectValue = function (obj, type, path, value){
    let minutes = String(date.getUTCMinutes()).padStart(2, '0');
    let seconds = String(date.getUTCSeconds()).padStart(2, '0');
    if (detailed) {
-     return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+     return `${year}/${month}/${day} ${hours}:${minutes}:${seconds} GMT`;
    } else {
      return `${year}/${month}/${day}`;
    }
@@ -832,7 +832,7 @@ let createGameData = async function(player1, player2){
     }
   }
 
-  let game = gameFactory(id, player1, player2, getDate());
+  let game = gameFactory(id, player1, player2, getDate(true));
   let response = await fetch('https://crib.nowicki.workers.dev', {
     method: 'POST',
     body: JSON.stringify(game),

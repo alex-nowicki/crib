@@ -46,6 +46,12 @@ html {
 }
 
 body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+#app {
   display: grid;
   /* grid-gap: 2.5rem; */
   grid-template-columns: 1fr;
@@ -347,7 +353,7 @@ input {
   line-height: 1.2;
 }
 
-#dialog > div {
+#dialog > section {
   grid-area: dialog;
   width: 40rem;
   padding: 6rem;
@@ -358,17 +364,17 @@ input {
   position: relative;
 }
 
-#dialog > div.is-active {
+#dialog > section.is-active {
   opacity: 1;
   margin: 0;
   pointer-events: all;
 }
 
-#dialog > div > *:first-child {
+#dialog > section > *:first-child {
   margin-top: 0;
 }
 
-#dialog > div > *:last-child {
+#dialog > section > *:last-child {
   margin-bottom: 0;
 }
 
@@ -956,6 +962,11 @@ hr.secondary {
 
 footer {
   grid-area: footer;
+  padding: 2rem;
+}
+
+footer p {
+  text-align: center;
 }
 
 
