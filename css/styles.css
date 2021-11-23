@@ -100,6 +100,11 @@ p {
   line-height: 1;
 }
 
+p.large {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
 p.small {
   font-size: 0.875rem;
   margin: 0 0 0.25rem;
@@ -347,12 +352,6 @@ input {
   height: 100vh;
 }
 
-#dialog p {
-  font-size: 1.25rem;
-  font-weight: 400;
-  line-height: 1.2;
-}
-
 #dialog > section {
   grid-area: dialog;
   width: 40rem;
@@ -394,6 +393,7 @@ input {
 
 svg.icon-accept, svg.icon-reject, svg.icon-attention, svg.icon-locked {
   height: 1.5rem;
+  flex-shrink: 0;
 }
 
 svg.icon-attention { fill: var(--yellow); }
@@ -406,8 +406,6 @@ svg.icon-locked { fill: white; }
 }
 
 .alert p {
-  line-height: 1;
-  font-size: 1rem;
   margin: 0;
 }
 
@@ -953,6 +951,12 @@ hr.secondary {
   box-shadow: 0 0 0.25rem var(--gray-500);
 }
 
+#game-end .cards {
+  background: none;
+  padding: 0;
+  margin: 1rem 0;
+
+}
 
 
 
@@ -967,6 +971,40 @@ footer {
 
 footer p {
   text-align: center;
+}
+
+
+
+
+/*
+** LOADING SPINNER
+------------------------------*/
+
+.spinner {
+  margin: 100px auto 0;
+  /* width: 70px; */
+  text-align: center;
+}
+
+.spinner > div {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0 0.25rem;
+  background-color: white;
+  border-radius: 100%;
+  display: inline-block;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.spinner > div:nth-child(1) { animation-delay: -0.32s; }
+.spinner > div:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  } 40% {
+    transform: scale(1.0);
+  }
 }
 
 

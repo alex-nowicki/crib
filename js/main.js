@@ -600,7 +600,8 @@ const gameFactory = (id, player1, player2, dateCreated) => {
     "go": null,
     "phase": "new",
     "log": [],
-    "winner": null
+    "winner": null,
+    "winningPlay": {}
   }
 }
 

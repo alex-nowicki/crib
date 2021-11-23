@@ -67,6 +67,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     store: store,
     template: function(props) {
       return `
+      <div class="spinner"><div></div><div></div><div></div></div>
       <div id="dialog" class="${props.dialog.pane == null ? `is-hidden` : ``}"></div>
       <header>
         <section id="site-info">
@@ -107,16 +108,16 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
                   <p>Login successful.</p>
                 </div>
             </form>
-            <p>Don't have an account? <a class="login-toggle">Sign up</a></p>
+            <p class="large">Don't have an account? <a class="login-toggle">Sign up</a></p>
           </section>
 
         <section id="signup" class="${props.dialog.pane == 'signup' ? `is-active` : `is-hidden`}">
           <h1>Sign up</h1>
-          <p>Note: Username cannot exceed 20 characters</p>
+          <p class="large">Username must be 3-20 characters long and may include any combination of alphanumeric characters and the following special characters: - _ .</p>
           <form action="">
             <label for="username">Username</label><br>
             <input type="text" id="signup-field" name="username" value=""><br>
-            <button type="button" id="signup-submit" class="big">Create Account</button>
+            <button type="button" id="signup-submit" class="big">Create Account<div class="spinner"><div></div><div></div><div></div></div></button>
             <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
               ${props.icons.attention}
               <p>${props.dialog.alert.text ? props.dialog.alert.text : `User does not exist.`}</p>
@@ -130,12 +131,12 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
               <p>Username already in use, please choose another.</p>
             </div>
           </form>
-          <p>Already have an account? <a class="login-toggle">Login</a></p>
+          <p class="large">Already have an account? <a class="login-toggle">Login</a></p>
         </section>
 
         <section id="new-game" class="${props.dialog.pane == 'new-game' ? `is-active` : `is-hidden`}">
           <h1>New game</h1>
-          <p>Type the username of the person you want to invite to a game:</p>
+          <p class="large">Type the username of the person you want to invite to a game:</p>
           <form action="">
             <label for="username">Username</label><br>
             <input type="text" id="new-game-field" name="username" value=""><br>
@@ -160,7 +161,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
         <section id="add-friend"  class="${props.dialog.pane == 'add-friend' ? `is-active` : `is-hidden`}">
           <h1>Add friend</h1>
-          <p>Type the username of the person you want to add as a friend:</p>
+          <p class="large">Type the username of the person you want to add as a friend:</p>
           <form action="">
             <label for="username">Username</label><br>
             <input type="text" id="add-friend-field" name="username" value=""><br>
@@ -185,7 +186,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
         <section id="confirm-block" class="${props.dialog.pane == 'confirm-block' ? `is-active` : `is-hidden`}">
           <h1>Block user</h1>
-          <p>Are you sure you want to block this user? They will no longer be able to send you friend or game requests.</p>
+          <p class="large">Are you sure you want to block this user? They will no longer be able to send you friend or game requests.</p>
           <div class="alert attention flex-row">
             ${props.icons.attention}
             <p>This action can't be undone.</p>
@@ -200,7 +201,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
         <section id="confirm-leave" class="${props.dialog.pane == 'confirm-leave' ? `is-active` : `is-hidden`}">
           <h1>Leave game</h1>
-          <p>Are you sure you want to leave this game? You will forfeit the game.</p>
+          <p class="large">Are you sure you want to leave this game? You will forfeit the game.</p>
           <div class="alert attention flex-row">
             ${props.icons.attention}
             <p>This action can't be undone.</p>
@@ -355,6 +356,22 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
                       ${notification.type == 'forfeit' ? `
                           <p class="small">${notification.sender} has forfeited game #${notification.content}</p>
+                        </div>
+                        <div class="button-group flex-row">
+                          <button type="button" class="notification-action clear">Clear</button>
+                        </div>
+                      ` : ''}
+
+                      ${notification.type == 'win' ? `
+                          <p class="small">You won game #${notification.content} against ${notification.sender}</p>
+                        </div>
+                        <div class="button-group flex-row">
+                          <button type="button" class="notification-action clear">Clear</button>
+                        </div>
+                      ` : ''}
+
+                      ${notification.type == 'lose' ? `
+                          <p class="small">You lost game #${notification.content} against ${notification.sender}</p>
                         </div>
                         <div class="button-group flex-row">
                           <button type="button" class="notification-action clear">Clear</button>
@@ -534,11 +551,19 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       updateUI = true;
       event.preventDefault()
       let username = document.querySelector('#signup-field').value;
+      let usernameRegex = /^[A-Za-z0-9\-\_\.]*$/;
+      console.log(usernameRegex.test(username));
       if (username.length == 0){
         storeCopy.dialog.alert.text = `You must type in a username.`;
         storeCopy.dialog.alert.type = 'attention';
+      } else if (username.length < 3) {
+        storeCopy.dialog.alert.text = `Username must have at least 3 characters.`;
+        storeCopy.dialog.alert.type = 'attention';
       } else if (username.length > 20) {
-        storeCopy.dialog.alert.text = `Your username cannot exceed 20 characters.`;
+        storeCopy.dialog.alert.text = `Username must have no more than 20 characters.`;
+        storeCopy.dialog.alert.type = 'attention';
+      } else if (!usernameRegex.test(username)){
+        storeCopy.dialog.alert.text = `Username can only include alphanumeric characters and the following special characters: - _ .`;
         storeCopy.dialog.alert.type = 'attention';
       } else if (!(await checkPlayer(username))){
         let player = await createPlayerData(username);

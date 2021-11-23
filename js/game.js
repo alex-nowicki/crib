@@ -2,7 +2,7 @@
 // Imports
 //
 
-import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, updateData } from './main.js';
+import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, updateData } from './main.js';
 
 (function () {
 
@@ -197,21 +197,23 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       }
       // Once a dealer is determined, pass to the deal phase
       obj.game.phase = "deal";
-      newLog(obj, obj.game.players[obj.game.dealer].username);
+      obj.game.log.unshift(newLog(obj, obj.game.players[obj.game.dealer].username));
 
     // Determine the starter for the round
     } else if (obj.game.phase === "starter"){
       let randomNum = Math.floor(Math.random() * (obj.game.deck.length - 1));
-      // obj.game.starter = obj.game.deck[randomNum];
-      // obj.game.deck.splice(randomNum, 1);
-      obj.game.starter = obj.game.deck[0];
-      obj.game.deck.splice(0, 1);
-      newLog(obj, obj.game.players[obj.game.turn].username, null, {starter: obj.game.starter, other: null});
+      obj.game.starter = obj.game.deck[randomNum];
+      obj.game.deck.splice(randomNum, 1);
+      obj.game.log.unshift(newLog(obj, obj.game.players[obj.game.turn].username, null, {starter: obj.game.starter, other: null}));
       // Score starter jack
       if (obj.game.starter.rank === 11){
-        console.log("STARTER: Jack");
         obj.game.players[obj.game.dealer].score += 2;
-        newLog(obj, obj.game.players[obj.game.dealer].username, ['STARTER: Jack'], {starter: obj.game.starter, other: null}, 2);
+        obj.game.log.unshift(newLog(obj, obj.game.players[obj.game.dealer].username, ['Starter jack'], {starter: obj.game.starter, other: null}, 2));
+        // Check for game winner
+        if (obj.game.players[obj.game.dealer].score > 20){
+          obj.game.winner = obj.game.players[obj.game.dealer].username;
+          obj.game.winningPlay = newLog(obj, obj.game.players[obj.game.dealer].username, ['Starter jack'], {starter: obj.game.starter, other: null}, 2);
+        }
       }
       // Once the starter is determined, pass to the play phase
       obj.game.phase = "play";
@@ -275,7 +277,12 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       obj.game.turn = obj.oppoIndex;
       // Assign a point to the other player
       obj.game.players[obj.oppoIndex].score += 1;
-      newLog(obj, obj.game.players[obj.oppoIndex].username, ['Go!'], {starter: null, other: null}, 1);
+      obj.game.log.unshift(newLog(obj, obj.game.players[obj.oppoIndex].username, ['Go!'], {starter: null, other: null}, 1));
+      // Check for game winner
+      if (obj.game.players[obj.oppoIndex].score > 20){
+        obj.game.winner = obj.game.players[obj.oppoIndex].username;
+        obj.game.winningPlay = newLog(obj, obj.game.players[obj.oppoIndex].username, ['Go!'], {starter: null, other: null}, 1);
+      }
       // Check whether opponent has a valid card to play, if so, bail, otherwise end of play
       if (checkValidPlay(obj, obj.oppoIndex)){
         return;
@@ -322,60 +329,60 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
    */
   let roundEnd = function(obj) {
     // Log end of the round
-    newLog(obj, null, ['Round end']);
+    obj.game.log.unshift(newLog(obj, null, ['Round end']));
     // Reset turn and go and pass to the count phase
     obj.game.turn = null;
     obj.game.go = null;
     obj.game.phase = "count";
-    // Score each hand and the crib
-    let userHandScore = scoreHand(obj, obj.game.players[obj.userIndex].discard, obj.game.players[obj.userIndex].username);
-    obj.game.players[obj.userIndex].score += userHandScore;
-    obj.game.players[obj.userIndex].highestHandScore = Math.max(obj.game.players[obj.userIndex].highestHandScore, userHandScore);
 
-    let opponentHandScore = scoreHand(obj, obj.game.players[obj.oppoIndex].discard, obj.game.players[obj.oppoIndex].username);
-    obj.game.players[obj.oppoIndex].score += opponentHandScore;
-    obj.game.players[obj.oppoIndex].highestHandScore = Math.max(obj.game.players[obj.oppoIndex].highestHandScore, opponentHandScore);
+    let nonDealerIndex;
+    obj.game.dealer == obj.userIndex ? nonDealerIndex = obj.oppoIndex : nonDealerIndex = obj.userIndex;
 
-    if (obj.game.dealer == obj.userIndex){
-      let userCribScore = scoreHand(obj, obj.game.crib, obj.game.players[obj.userIndex].username);
-      obj.game.players[obj.userIndex].score += userCribScore;
-      obj.game.players[obj.userIndex].highestHandScore = Math.max(obj.game.players[obj.userIndex].highestHandScore, userCribScore);
+    // Score non-dealer hand
+    let nonDealerHand = scoreHand(obj, obj.game.players[nonDealerIndex].discard, obj.game.players[nonDealerIndex].username);
+    obj.game.players[nonDealerIndex].score += nonDealerHand.value;
+    obj.game.players[nonDealerIndex].highestHandScore = Math.max(obj.game.players[nonDealerIndex].highestHandScore, nonDealerHand.value);
+    obj.game.log.unshift(newLog(obj, nonDealerHand.player, nonDealerHand.description, nonDealerHand.cards, nonDealerHand.value));
+
+    // Check for winner
+    if (obj.game.players[nonDealerIndex].score > 20){
+      obj.game.winner = obj.game.players[nonDealerIndex].username;
+      obj.game.winningPlay = newLog(obj, nonDealerHand.player, nonDealerHand.description, nonDealerHand.cards, nonDealerHand.value);
+
+    // Otherwise, score dealer's hand
     } else {
-      let opponentCribScore = scoreHand(obj, obj.game.crib, obj.game.players[obj.oppoIndex].username);
-      obj.game.players[obj.oppoIndex].score += opponentCribScore;
-      obj.game.players[obj.oppoIndex].highestHandScore = Math.max(obj.game.players[obj.oppoIndex].highestHandScore, opponentCribScore);
+      let dealerHand = scoreHand(obj, obj.game.players[obj.game.dealer].discard, obj.game.players[obj.game.dealer].username);
+      obj.game.players[obj.game.dealer].score += dealerHand.value;
+      obj.game.players[obj.game.dealer].highestHandScore = Math.max(obj.game.players[obj.game.dealer].highestHandScore, dealerHand.value);
+      obj.game.log.unshift(newLog(obj, dealerHand.player, dealerHand.description, dealerHand.cards, dealerHand.value));
+
+      // Check for winner
+      if (obj.game.players[obj.game.dealer].score > 20){
+        obj.game.winner = obj.game.players[obj.game.dealer].username;
+        obj.game.winningPlay = newLog(obj, dealerHand.player, dealerHand.description, dealerHand.cards, dealerHand.value);
+
+      // Otherwise, score dealer's crib
+      } else {
+        let dealerCrib = scoreHand(obj, obj.game.crib, obj.game.players[obj.game.dealer].username);
+        obj.game.players[obj.game.dealer].score += dealerCrib.value;
+        obj.game.players[obj.game.dealer].highestHandScore = Math.max(obj.game.players[obj.game.dealer].highestHandScore, dealerCrib.value);
+        obj.game.log.unshift(newLog(obj, dealerCrib.player, dealerCrib.description, dealerCrib.cards, dealerCrib.value));
+
+        // Check for winner
+        if (obj.game.players[obj.game.dealer].score > 20){
+          obj.game.winner = obj.game.players[obj.game.dealer].username;
+          obj.game.winningPlay = newLog(obj, dealerCrib.player, dealerCrib.description, dealerCrib.cards, dealerCrib.value);
+
+        // Otherwise, start a new round
+        } else {
+          // Pass on to the deal phase
+          obj.game.phase = 'deal';
+          switchDealer(obj);
+          // Log the new dealer
+          obj.game.log.unshift(newLog(obj, obj.game.players[obj.game.dealer].username));
+        }
+      }
     }
-
-    // Pass on to the deal phase
-    obj.game.phase = 'deal';
-    switchDealer(obj);
-    // Log the new dealer
-    newLog(obj, obj.game.players[obj.game.dealer].username);
-  }
-
-  /**
-   * Clean up and reset at the end of the game
-   */
-  let gameEnd = function(obj) {
-    // Show dialog of game summary
-
-
-    // Update game data
-    if (obj.game.players[obj.userIndex].score >= 121){
-      obj.game.winner = obj.game.players[obj.userIndex].username;
-    } else {
-      obj.game.winner = obj.game.players[obj.oppoIndex].username;
-    }
-
-    // Reset game variables
-    obj.turn = null;
-    obj.dealer = null;
-    obj.go = null;
-
-    // Add final log
-    newLog(obj, obj.game.winner);
-
-
   }
 
   /**
@@ -387,7 +394,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
    * @param {Number} value - Score value of the action, if applicable
    */
   let newLog = function(obj, player, description, cards = {starter: null, other: null}, value = 0) {
-    obj.game.log.unshift({
+    return {
       phase: obj.game.phase,
       player: player,
       description: description,
@@ -397,7 +404,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       },
       value: value,
       date: getDate(true)
-    })
+    }
   }
 
   /**
@@ -431,8 +438,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       values.push(card.value);
       // Check for jack of same suit
       if (card.rank == 11 && card.suit == obj.game.starter.suit){
-        console.log('SCORE: Jack of Same Suit');
-        log.description.push('Jack of Same Suit');
+        log.description.push('Jack of starter suit');
         log.value += 2;
       }
     });
@@ -471,7 +477,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
     }
 
     if (fifteens !== 0){
-      console.log('SCORE: ' + fifteens + ' fifteens');
       log.description.push(`${fifteens} fifteen${fifteens > 1 ? 's' : ''}`);
       log.value += (2 * fifteens);
     }
@@ -480,11 +485,9 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
     suits = [...new Set(suits)];
     if (suits.length == 1){
       if (obj.game.starter.suit == suits[0]){
-        console.log('SCORE: 5 card flush');
         log.description.push('5 card flush');
         log.value += 5;
       } else {
-        console.log('SCORE: 4 card flush');
         log.description.push('4 card flush');
         log.value += 4;
       }
@@ -569,9 +572,9 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       log.value += 5;
     }
 
-    newLog(obj, log.player, log.description, log.cards, log.value);
+    // obj.game.log.unshift(newLog(obj, log.player, log.description, log.cards, log.value));
 
-    return log.value;
+    return log;
   }
 
   /**
@@ -641,7 +644,22 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       console.log(error);
     }
 
-    console.log(store.data);
+    store.data.game.winningPlay.phase = 'play';
+    store.data.game.winningPlay.value = 1;
+    store.data.game.winningPlay.description = ['2 fifteens', 'Run of three'];
+
+
+    // {
+    //   phase: 'play',
+    //   player: null,
+    //   description: description,
+    //   cards: {
+    //     starter: cards.starter,
+    //     other: cards.other
+    //   },
+    //   value: value,
+    //   date: getDate(true)
+    // }
 
     if (store.data.game.players[1].username.toLowerCase() == store.data.user.toLowerCase()){
       store.data.userIndex = 1;
@@ -658,7 +676,40 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
           <div id="dialog" class="${props.dialog.pane != null || props.game.phase == 'end' ? `` : `is-hidden`}">
             <section id="game-end" class="${props.game.phase == 'end' ? `is-active` : `is-hidden`}">
               <h1>${props.game.winner} Wins!</h1>
-              <p>Final score is ${props.game.players[1].score} (${props.game.players[1].username}) / ${props.game.players[2].score} (${props.game.players[2].username})</p>
+              <p class="large">Final score is ${props.game.players[1].score} (${props.game.players[1].username}) / ${props.game.players[2].score} (${props.game.players[2].username})</p>
+
+              ${props.game.winner != null ? `
+                <p class="large">${props.game.winner}
+                    ${props.game.winningPlay.phase == 'starter' ||  props.game.winningPlay.phase == 'play' ? `scored a
+                    ${props.game.winningPlay.description.map(function(description){
+                      return `${description}`
+                    }).join(' + ')}
+                  for ${props.game.winningPlay.value}pt${props.game.winningPlay.value > 1 ? `s` : ``} ` : ``}
+                  ${props.game.winningPlay.phase == 'count' ? `scored a ${props.game.winningPlay.value}pt hand
+                    (${props.game.winningPlay.description.map(function(description){
+                      return `${description}`
+                    }).join(' / ')})
+                  ` : ``}
+                to win the game.</p>
+
+                ${(props.game.winningPlay.cards.other != null || props.game.winningPlay.cards.starter != null) ? `
+                  <div class="cards overlap flex-row">
+                    ${props.game.winningPlay.cards.starter != null ? `
+                      <div class="card starter">
+                        ${props.game.winningPlay.starter.svg}
+                      </div>` : ''}
+                    ${props.game.winningPlay.cards.other.map(function(card){
+                      return `
+                        <div class="card">
+                          ${card.svg}
+                        </div>
+                      `
+                    }).join('')}
+                  </div>
+                ` : ``}
+
+              ` : ``}
+
               <form action="">
                 <div class="flex-row">
                   <button type="button" class="account big">My Account</button>
@@ -777,14 +828,15 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
               ${props.icons.turn}
               <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must select a card to play or Go!</h3>
           ` : ''}
+          ${props.alert != null ? `
+            <div class="alert reject flex-row" data-type="${props.alert}">
+              ${props.icons.reject}
+              ${props.alert == 'go' ? `<p>If you can play a card from your hand, you must!</p>` : ''}
+              ${props.alert == 'bust' ? `<p>You can't play a card that will exceed 31!</p>` : ''}
+            </div>
+          ` : ``}
         </div>
-        ${props.alert != null ? `
-          <div class="alert reject flex-row" data-type="${props.alert}">
-            ${props.icons.reject}
-            ${props.alert == 'go' ? `<p>If you can play a card from your hand, you must!</p>` : ''}
-            ${props.alert == 'bust' ? `<p>You can't play a card that will exceed 31!</p>` : ''}
-          </div>
-        ` : ``}
+
         `;
       },
       attachTo: table
@@ -1234,7 +1286,7 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
             logCardCount = logCardMax;
           } else if (storeCopy.game.tally == 31) {
             storeCopy.game.players[storeCopy.userIndex].score += 2;
-            log.description.push('Thirty-One');
+            log.description.push('Thirty-one');
             log.value += 2;
             logCardCount = logCardMax;
           }
@@ -1242,20 +1294,17 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
           // If same rank, assign points
           if (storeCopy.game.play.length > 1 && targetCard.rank == storeCopy.game.play[storeCopy.game.play.length - 2].rank){
             let type;
-            console.log('PLAY: double');
             storeCopy.game.players[storeCopy.userIndex].score += 2;
             type = 'Double';
             log.value += 2;
             logCardCount = logCardCount < 2 ? logCardCount = 2 : logCardCount;
             console.l
             if (storeCopy.game.play.length > 2 && targetCard.rank == storeCopy.game.play[storeCopy.game.play.length - 3].rank){
-              console.log('PLAY: triple');
               storeCopy.game.players[storeCopy.userIndex].score += 4;
               type = 'Triple';
               log.value += 4;
               logCardCount = logCardCount < 3 ? logCardCount = 3 : logCardCount;
               if (storeCopy.game.play.length > 3 && targetCard.rank == storeCopy.game.play[storeCopy.game.play.length - 4].rank){
-                console.log('PLAY: quadruple');
                 storeCopy.game.players[storeCopy.userIndex].score += 6;
                 type = 'Quadruple';
                 log.value += 6;
@@ -1277,7 +1326,6 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
           }
 
           if (runLength > 2) {
-            console.log(`PLAY: ${runLength} card run`);
             storeCopy.game.players[storeCopy.userIndex].score += runLength;
             log.description.push(`Run of ${runLength}`);
             log.value += runLength;
@@ -1290,7 +1338,11 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
             } else {
               log.cards.other = [...storeCopy.game.play].slice(-logCardCount);
             }
-            newLog(storeCopy, log.player, log.description, log.cards, log.value);
+            storeCopy.game.log.unshift(newLog(storeCopy, log.player, log.description, log.cards, log.value));
+            if (storeCopy.game.players[storeCopy.userIndex].score > 20){
+              storeCopy.game.winner = storeCopy.game.players[storeCopy.userIndex].username;
+              storeCopy.game.winningPlay = newLog(storeCopy, log.player, log.description, log.cards, log.value);
+            }
           }
 
           // If opponent still has cards, they haven't passed, and the tally is not 31, switch turns
@@ -1313,7 +1365,11 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
             console.log('ROUND END: NO CARDS LEFT');
             // Assign the automatic Go! points
             storeCopy.game.players[storeCopy.userIndex].score += 1;
-            newLog(storeCopy, storeCopy.game.players[storeCopy.userIndex].username, ['Go!'], {starter: null, other: null}, 1);
+            storeCopy.game.log.unshift(newLog(storeCopy, storeCopy.game.players[storeCopy.userIndex].username, ['Go!'], {starter: null, other: null}, 1));
+            if (storeCopy.game.players[storeCopy.userIndex].score > 20){
+              storeCopy.game.winner = storeCopy.game.players[storeCopy.userIndex].username;
+              storeCopy.game.winningPlay = newLog(storeCopy, storeCopy.game.players[storeCopy.userIndex].username, ['Go!'], {starter: null, other: null}, 1);
+            }
             playEnd(storeCopy);
           }
 
@@ -1360,25 +1416,21 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
     }
 
     // Check for end of game
-    if (storeCopy.game.winner == null && (storeCopy.game.players[storeCopy.userIndex].score >= 31 || storeCopy.game.players[storeCopy.oppoIndex].score >= 31)){
+    if (storeCopy.game.winner != null && storeCopy.game.phase != 'end') {
       updateUI = true;
       updateGame = true;
-
       storeCopy.game.phase = 'end';
-
       console.log('GAME END');
+
       let winner = {};
       let loser = {};
 
-      // Update game data
-      if (storeCopy.game.players[storeCopy.userIndex].score >= 121){
-        storeCopy.game.winner = storeCopy.game.players[storeCopy.userIndex].username;
+      if (storeCopy.game.winner == storeCopy.game.players[storeCopy.userIndex].username){
         winner.id = 'user';
         winner.index = storeCopy.userIndex;
         loser.id = 'other';
         loser.index = storeCopy.oppoIndex;
       } else {
-        storeCopy.game.winner = storeCopy.game.players[storeCopy.oppoIndex].username;
         winner.id = 'other';
         winner.index = storeCopy.oppoIndex;
         loser.id = 'user';
@@ -1393,7 +1445,25 @@ import { cards, checkLocalStorage, clearLocalStorage, getDate, getTableData, upd
       storeCopy.game.date.completed = getDate(true);
 
       // Add final log
-      newLog(storeCopy, storeCopy.game.winner);
+      storeCopy.game.log.unshift(newLog(storeCopy, storeCopy.game.winner));
+
+      // Notify winner
+      let notifyWinner = notificationFactory(getDate(), 'win', 'received', changeLog[loser.id].username, changeLog[winner.id].username, changeLog.game.id);
+
+      changeLog[winner.id].changes.push({
+        path: 'notifications.unread',
+        value: notifyWinner,
+        type: 'add'
+      })
+
+      // Notify loser
+      let notifyLoser = notificationFactory(getDate(), 'lose', 'received', changeLog[winner.id].username, changeLog[loser.id].username, changeLog.game.id);
+
+      changeLog[loser.id].changes.push({
+        path: 'notifications.unread',
+        value: notifyLoser,
+        type: 'add'
+      })
 
       // Log stats
       changeLog[loser.id].changes.push({
