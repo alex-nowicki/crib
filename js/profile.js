@@ -50,6 +50,17 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     store.data.games = profileData.games;
   }
 
+  let toggleButtonSpinner = function(button){
+    button.querySelector('span').classList.toggle('is-transparent');
+    button.querySelector('.spinner').classList.toggle('is-hidden');
+  }
+
+  let closeDialog = function(obj){
+    obj.dialog.pane = null;
+    obj.dialog.alert.type = null;
+    obj.dialog.alert.text = null;
+    appElem.classList.remove('is-fixed');
+  }
 
 
 
@@ -63,11 +74,12 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     data: {}
   })
 
+  let appElem = document.querySelector('#app');
+
   let app = new Reef('#app', {
     store: store,
     template: function(props) {
       return `
-      <div class="spinner"><div></div><div></div><div></div></div>
       <div id="dialog" class="${props.dialog.pane == null ? `is-hidden` : ``}"></div>
       <header>
         <section id="site-info">
@@ -93,12 +105,16 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     store: store,
     template: function(props) {
       return `
+          <section id="load" class="${props.dialog.pane == 'load' ? `is-active` : `is-hidden`}">
+            <div class="spinner large"><div></div><div></div><div></div></div>
+          </section>
+
           <section id="login" class="${props.dialog.pane == 'login' ? `is-active` : `is-hidden`}">
             <h1>Login</h1>
             <form action="">
               <label for="username">Username</label><br>
               <input type="text" id="login-field" name="username" value=""><br>
-              <button type="button" id="login-submit" class="big">Login</button>
+              <button type="button" id="login-submit" class="big"><span>Login</span><div class="spinner medium is-hidden"><div></div><div></div><div></div></div></button>
                 <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
                   ${props.icons.attention}
                   <p>${props.dialog.alert.text ? props.dialog.alert.text : `User does not exist.`}</p>
@@ -117,7 +133,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
           <form action="">
             <label for="username">Username</label><br>
             <input type="text" id="signup-field" name="username" value=""><br>
-            <button type="button" id="signup-submit" class="big">Create Account<div class="spinner"><div></div><div></div><div></div></div></button>
+            <button type="button" id="signup-submit" class="big"><span>Create Account</span><div class="spinner medium is-hidden"><div></div><div></div><div></div></div></button>
             <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
               ${props.icons.attention}
               <p>${props.dialog.alert.text ? props.dialog.alert.text : `User does not exist.`}</p>
@@ -141,7 +157,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
             <label for="username">Username</label><br>
             <input type="text" id="new-game-field" name="username" value=""><br>
             <div class="flex-row">
-              <button type="button" id="new-game-submit" class="big">Send Request</button>
+              <button type="button" id="new-game-submit" class="big"><span>Send Request</span><div class="spinner medium is-hidden"><div></div><div></div><div></div></div></button>
               <button type="button" class="big cancel">Cancel</button>
             </div>
             <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
@@ -166,7 +182,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
             <label for="username">Username</label><br>
             <input type="text" id="add-friend-field" name="username" value=""><br>
             <div class="flex-row">
-              <button type="button" id="add-friend-submit" class="big">Send Request</button>
+              <button type="button" id="add-friend-submit" class="big"><span>Send Request</span><div class="spinner medium is-hidden"><div></div><div></div><div></div></div></button>
               <button type="button" class="big cancel">Cancel</button>
             </div>
             <div class="alert attention flex-row ${props.dialog.alert.type == 'attention' ? `` : `is-hidden`}">
@@ -193,8 +209,16 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
           </div>
           <form action="">
             <div class="flex-row">
-              <button type="button" class="big confirm" data-type="block" data-index="${props.dialog.index}">Confirm</button>
+              <button type="button" class="big confirm" data-type="block" data-index="${props.dialog.index}"><span>Confirm</span><div class="spinner medium is-hidden"><div></div><div></div><div></div></div></button>
               <button type="button" class="big cancel">Cancel</button>
+            </div>
+            <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
+              ${props.icons.accept}
+              <p>User blocked.</p>
+            </div>
+            <div class="alert reject flex-row ${props.dialog.alert.type == 'reject' ? `` : `is-hidden`}">
+              ${props.icons.reject}
+              <p>Server error. Please reload the page and try again.</p>
             </div>
           </form>
         </section>
@@ -208,9 +232,29 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
           </div>
           <form action="">
             <div class="flex-row">
-              <button type="button" class="big confirm" data-type="leave" data-index="${props.dialog.index}">Confirm</button>
+              <button type="button" class="big confirm" data-type="leave" data-index="${props.dialog.index}"><span>Confirm</span><div class="spinner medium is-hidden"><div></div><div></div><div></div></div></button>
               <button type="button" class="big cancel">Cancel</button>
             </div>
+            <div class="alert accept flex-row ${props.dialog.alert.type == 'accept' ? `` : `is-hidden`}">
+              ${props.icons.accept}
+              <p>You left the game.</p>
+            </div>
+            <div class="alert reject flex-row ${props.dialog.alert.type == 'reject' ? `` : `is-hidden`}">
+              ${props.icons.reject}
+              <p>Server error. Please reload the page and try again.</p>
+            </div>
+          </form>
+        </section>
+
+        <section id="server-error" class="${props.dialog.pane == 'error' ? `is-active` : `is-hidden`}">
+          <h1>Server error</h1>
+          <div class="alert reject flex-row">
+            ${props.icons.reject}
+            <h3>An unexpected error occurred.</h3>
+          </div>
+          <p class="large">Please reload the page and try again.</p>
+          <form action="">
+            <button type="button" class="reload big">Reload Page</button>
           </form>
         </section>
 
@@ -224,6 +268,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       let profileData = await getProfileData(user);
       store.data.user = profileData.player;
       store.data.games = profileData.games;
+      console.log('Data received');
     } catch (error){
       console.log(error);
     }
@@ -348,8 +393,8 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
                           <p class="small">${notification.sender} sent you a ${notification.type} request</p>
                         </div>
                         <div class="button-group flex-row">
-                          <button type="button" class="notification-action accept">Accept</button>
-                          <button type="button" class="notification-action reject">Reject</button>
+                          <button type="button" class="notification-action accept"><span>Accept</span><div class="spinner small is-hidden"><div></div><div></div><div></div></div></button>
+                          <button type="button" class="notification-action reject"><span>Reject</span><div class="spinner small is-hidden"><div></div><div></div><div></div></div></button>
                           <button type="button" class="dialog-open" data-target="confirm-block">Block</button>
                         </div>
                       ` : ''}
@@ -433,9 +478,9 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
                     </div>
                     <div class="button-group flex-row">
                       ${props.games.open.length < 5 ? `
-                        <button type="button" class="friend-action new-game">New Game</button>
+                        <button type="button" class="friend-action new-game"><span>New Game</span><div class="spinner small is-hidden"><div></div><div></div><div></div></div></button>
                       ` : ''}
-                      <button type="button" class="friend-action remove">Unfriend</button>
+                      <button type="button" class="friend-action remove"><span>Unfriend</span><div class="spinner small is-hidden"><div></div><div></div><div></div></div></button>
                     </div>
                   </li>`
               }).join('')}
@@ -459,7 +504,18 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
   }
 
-
+  document.addEventListener('reef:render', function(event){
+    console.log(event.target);
+    if (event.target.id == 'profile'){
+      if (store.data.dialog.pane == 'login' || store.data.dialog.pane == 'signup'){
+        console.log('Spinner Toggle');
+        toggleButtonSpinner(document.querySelector(`#${store.data.dialog.pane}-submit`));
+        closeDialog(store.data);
+      } else if (store.data.dialog.pane == 'load'){
+        closeDialog(store.data);
+      }
+    }
+  })
 
 
 	//
@@ -474,9 +530,12 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
   if (user) {
     user = user.toLowerCase();
+    store.data.dialog.pane = 'load';
+    appElem.classList.add('is-fixed');
     initProfile(user);
   } else {
     store.data.dialog.pane = 'login';
+    appElem.classList.add('is-fixed');
   }
 
   // Refresh profile data every 10 seconds
@@ -500,9 +559,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
     if (event.target.classList.contains('dialog-close')){
       updateUI = true;
-      storeCopy.dialog.pane = null;
-      storeCopy.dialog.alert.type = null;
-      storeCopy.dialog.alert.text = null;
+      closeDialog(storeCopy);
     }
 
     if (event.target.classList.contains('dialog-open')){
@@ -516,6 +573,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
         storeCopy.dialog.index = index;
       }
       storeCopy.dialog.pane = target;
+      appElem.classList.add('is-fixed');
     }
 
     if (event.target.classList.contains('login-toggle')) {
@@ -529,17 +587,15 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       updateUI = true;
       event.preventDefault()
       let username = document.querySelector('#login-field').value;
+      toggleButtonSpinner(event.target);
       if (username.length == 0){
         storeCopy.dialog.alert.text = `You must type in a username.`;
         storeCopy.dialog.alert.type = 'attention';
       } else if (await checkPlayer(username)){
+        updateUI = false;
         user = username.toLowerCase();
         localStorage.setItem('user', username);
         initProfile(user);
-        // Close login dialog
-        storeCopy.dialog.pane = null;
-        storeCopy.dialog.alert.type = null;
-        storeCopy.dialog.alert.text = null;
       } else {
         // Trigger alert
         storeCopy.dialog.alert.type = 'attention';
@@ -552,7 +608,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       event.preventDefault()
       let username = document.querySelector('#signup-field').value;
       let usernameRegex = /^[A-Za-z0-9\-\_\.]*$/;
-      console.log(usernameRegex.test(username));
+      toggleButtonSpinner(event.target);
       if (username.length == 0){
         storeCopy.dialog.alert.text = `You must type in a username.`;
         storeCopy.dialog.alert.type = 'attention';
@@ -568,12 +624,10 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       } else if (!(await checkPlayer(username))){
         let player = await createPlayerData(username);
         if (player){
+          updateUI = false;
           localStorage.setItem('user', username);
           user = username.toLowerCase();
           initProfile(user)
-          storeCopy.dialog.pane = null;
-          storeCopy.dialog.alert.type = null;
-          storeCopy.dialog.alert.text = null;
         } else {
           console.warn('Something went wrong. Player not created.');
         }
@@ -586,13 +640,15 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
     if (event.target.classList.contains('cancel')){
       updateUI = true;
-      storeCopy.dialog.pane = null;
-      storeCopy.dialog.alert.type = null;
-      storeCopy.dialog.alert.text = null;
+      closeDialog(storeCopy);
     }
 
     if (event.target.id === 'logout'){
       clearLocalStorage();
+      window.location.reload();
+    }
+
+    if (event.target.classList.contains('reload')) {
       window.location.reload();
     }
 
@@ -645,6 +701,8 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
       storeCopy.dialog.alert.type = null;
       let username = document.querySelector(`#${selector}-field`).value;
+
+      toggleButtonSpinner(event.target);
 
       if (username.length == 0){
         storeCopy.dialog.alert.text = `You must type in a username.`;
@@ -701,8 +759,11 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
     if (event.target.classList.contains('friend-action')){
       updateUI = true;
+      eventType = 'friend';
       let index = event.target.closest('.friend').dataset.index;
       let friend = storeCopy.user.friends[index];
+
+      toggleButtonSpinner(event.target);
 
       changeLog.other.username = friend.toLowerCase();
 
@@ -787,6 +848,9 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
           // Log sender username
           changeLog.other.username = notification.sender.toLowerCase();
 
+          // Show spinner
+          toggleButtonSpinner(event.target);
+
           if (event.target.classList.contains('accept')){
             reply.status = 'accepted';
 
@@ -866,9 +930,11 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       let type = event.target.dataset.type;
       let index = event.target.dataset.index;
 
+      toggleButtonSpinner(event.target);
+
       if (type == 'leave'){
 
-        eventType == 'leave';
+        eventType = 'leave';
         changeLog.game.id = storeCopy.games.open[index].id;
 
         let otherUsername;
@@ -959,6 +1025,8 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
         })
 
       } else if (type == 'block'){
+        eventType = 'block';
+
         changeLog.other.username = storeCopy.user.notifications.unread[index].sender.toLowerCase();
 
         // Add request sender to recipient blocked list
@@ -1008,9 +1076,6 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
           type: 'add'
         })
       }
-      storeCopy.dialog.pane = null;
-      storeCopy.dialog.alert.type = null;
-      storeCopy.dialog.alert.text = null;
     }
 
     //
@@ -1022,7 +1087,14 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     let gameData;
 
     if (changeLog.user.changes.length > 0){
-      userData = await updateData(changeLog.user);
+      try {
+        userData = await updateData(changeLog.user$$);
+      } catch (error) {
+        console.error(error);
+        // Show dialog and prompt user to reload the page
+        store.data.dialog.pane = 'error';
+      }
+
     }
     if (changeLog.other.changes.length > 0){
       otherData = await updateData(changeLog.other);
@@ -1039,15 +1111,21 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       // Update user data
       storeCopy.user = userData;
       // Inform user of successfully sent request
-      if (eventType == 'request'){
+      if (eventType == 'request' || eventType == 'leave' || eventType == 'block'){
+        // Hide load spinner
+        toggleButtonSpinner(event.target);
+        // Show success alert
         storeCopy.dialog.alert.type ='accept';
         // Close dialog after a few seconds
         setTimeout(function(){
-          storeCopy.dialog.pane = null;
-          storeCopy.dialog.alert.type = null;
-          storeCopy.dialog.alert.text = null;
+          // Close dialog after delay
+          closeDialog(storeCopy);
+          // Update UI after delay
           store.data = storeCopy;
-        }, 750);
+        }, 1000);
+      } else if (eventType == 'friend' || eventType == 'reply'){
+        // Hide load spinner
+        toggleButtonSpinner(event.target);
       }
     }
 

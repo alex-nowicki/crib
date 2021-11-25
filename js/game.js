@@ -154,6 +154,33 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
     return run;
   }
 
+  let findSubsets = function (array, target) {
+    let result = [];
+    let fork = function (i = 0, sum = 0, subset = []) {
+      // If sum equals target, log subset and bail
+      if (sum === target) {
+        result.push(subset);
+        console.log('Fifteen! Track and bail', result);
+        return;
+      }
+      // If end of array, bail
+      if (i === array.length) {
+        console.log('End of array, bail');
+        return;
+      }
+      // If sum + current arr elem is lesser or equal to target, skip to next int, add to sum, and merge subset and arr elem into new arr
+      console.log(sum, '+', array[i], '=', sum + array[i]);
+      if (sum + array[i] <= target) {
+        fork(i + 1, sum + array[i], subset.concat(array[i]));
+      }
+      // Otherwise, skip int and continue
+      fork(i + 1, sum, subset);
+    }
+
+    fork();
+    return result;
+  }
+
 
 
   // Game Functions
@@ -169,8 +196,6 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
     // Determine the first dealer in a new game
     if (obj.game.phase === "new"){
       // Reset play area
-      console.log(obj.game.players);
-      console.log(obj.game.players[obj.userIndex]);
       obj.game.players[obj.userIndex].play = [];
       obj.game.players[obj.oppoIndex].play = [];
       // Create duplicate of deck to draw from
@@ -210,7 +235,7 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
         obj.game.players[obj.game.dealer].score += 2;
         obj.game.log.unshift(newLog(obj, obj.game.players[obj.game.dealer].username, ['Starter jack'], {starter: obj.game.starter, other: null}, 2));
         // Check for game winner
-        if (obj.game.players[obj.game.dealer].score > 20){
+        if (obj.game.players[obj.game.dealer].score > 60){
           obj.game.winner = obj.game.players[obj.game.dealer].username;
           obj.game.winningPlay = newLog(obj, obj.game.players[obj.game.dealer].username, ['Starter jack'], {starter: obj.game.starter, other: null}, 2);
         }
@@ -279,7 +304,7 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       obj.game.players[obj.oppoIndex].score += 1;
       obj.game.log.unshift(newLog(obj, obj.game.players[obj.oppoIndex].username, ['Go!'], {starter: null, other: null}, 1));
       // Check for game winner
-      if (obj.game.players[obj.oppoIndex].score > 20){
+      if (obj.game.players[obj.oppoIndex].score > 60){
         obj.game.winner = obj.game.players[obj.oppoIndex].username;
         obj.game.winningPlay = newLog(obj, obj.game.players[obj.oppoIndex].username, ['Go!'], {starter: null, other: null}, 1);
       }
@@ -340,36 +365,39 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
 
     // Score non-dealer hand
     let nonDealerHand = scoreHand(obj, obj.game.players[nonDealerIndex].discard, obj.game.players[nonDealerIndex].username);
+    console.log(nonDealerHand);
     obj.game.players[nonDealerIndex].score += nonDealerHand.value;
     obj.game.players[nonDealerIndex].highestHandScore = Math.max(obj.game.players[nonDealerIndex].highestHandScore, nonDealerHand.value);
     obj.game.log.unshift(newLog(obj, nonDealerHand.player, nonDealerHand.description, nonDealerHand.cards, nonDealerHand.value));
 
     // Check for winner
-    if (obj.game.players[nonDealerIndex].score > 20){
+    if (obj.game.players[nonDealerIndex].score > 60){
       obj.game.winner = obj.game.players[nonDealerIndex].username;
       obj.game.winningPlay = newLog(obj, nonDealerHand.player, nonDealerHand.description, nonDealerHand.cards, nonDealerHand.value);
 
     // Otherwise, score dealer's hand
     } else {
       let dealerHand = scoreHand(obj, obj.game.players[obj.game.dealer].discard, obj.game.players[obj.game.dealer].username);
+      console.log(dealerHand);
       obj.game.players[obj.game.dealer].score += dealerHand.value;
       obj.game.players[obj.game.dealer].highestHandScore = Math.max(obj.game.players[obj.game.dealer].highestHandScore, dealerHand.value);
       obj.game.log.unshift(newLog(obj, dealerHand.player, dealerHand.description, dealerHand.cards, dealerHand.value));
 
       // Check for winner
-      if (obj.game.players[obj.game.dealer].score > 20){
+      if (obj.game.players[obj.game.dealer].score > 60){
         obj.game.winner = obj.game.players[obj.game.dealer].username;
         obj.game.winningPlay = newLog(obj, dealerHand.player, dealerHand.description, dealerHand.cards, dealerHand.value);
 
       // Otherwise, score dealer's crib
       } else {
         let dealerCrib = scoreHand(obj, obj.game.crib, obj.game.players[obj.game.dealer].username);
+        console.log(dealerCrib);
         obj.game.players[obj.game.dealer].score += dealerCrib.value;
         obj.game.players[obj.game.dealer].highestHandScore = Math.max(obj.game.players[obj.game.dealer].highestHandScore, dealerCrib.value);
         obj.game.log.unshift(newLog(obj, dealerCrib.player, dealerCrib.description, dealerCrib.cards, dealerCrib.value));
 
         // Check for winner
-        if (obj.game.players[obj.game.dealer].score > 20){
+        if (obj.game.players[obj.game.dealer].score > 60){
           obj.game.winner = obj.game.players[obj.game.dealer].username;
           obj.game.winningPlay = newLog(obj, dealerCrib.player, dealerCrib.description, dealerCrib.cards, dealerCrib.value);
 
@@ -448,35 +476,10 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
     values.push(obj.game.starter.value);
 
     // Check for fifteens
-    for (let i = 0; i < (values.length - 1); i++){
-      let sum = 0;
-      let offset = 0;
-      // Add value of the first card to the sum
-      sum += values[i];
-      for (let j = (i + 1); j < values.length; j++){
-        sum += values[j];
-        if (sum < 15){
-          continue;
-        } else if (sum == 15) {
-          fifteens += 1;
-        }
-        // Reset back to the original number
-        sum = values[i];
-        // Check for double skip #-#-#
-        if (i == 0 && offset == 1){
-          let sumCopy = sum;
-          sumCopy += (values[2] + values[4]);
-          if (sumCopy == 15){
-            fifteens += 1;
-          }
-        }
-        // Increase offset to skip over a card
-        offset += 1;
-        j = i + offset;
-      }
-    }
+    fifteens = findSubsets(values, 15).length;
+    console.log(fifteens)
 
-    if (fifteens !== 0){
+    if (fifteens != 0){
       log.description.push(`${fifteens} fifteen${fifteens > 1 ? 's' : ''}`);
       log.value += (2 * fifteens);
     }
@@ -644,23 +647,6 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       console.log(error);
     }
 
-    store.data.game.winningPlay.phase = 'play';
-    store.data.game.winningPlay.value = 1;
-    store.data.game.winningPlay.description = ['2 fifteens', 'Run of three'];
-
-
-    // {
-    //   phase: 'play',
-    //   player: null,
-    //   description: description,
-    //   cards: {
-    //     starter: cards.starter,
-    //     other: cards.other
-    //   },
-    //   value: value,
-    //   date: getDate(true)
-    // }
-
     if (store.data.game.players[1].username.toLowerCase() == store.data.user.toLowerCase()){
       store.data.userIndex = 1;
       store.data.oppoIndex = 2;
@@ -674,6 +660,19 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       template: function(props) {
         return `
           <div id="dialog" class="${props.dialog.pane != null || props.game.phase == 'end' ? `` : `is-hidden`}">
+
+            <section id="server-error" class="${props.dialog.pane == 'error' ? `is-active` : `is-hidden`}">
+              <h1>Server error</h1>
+              <div class="alert reject flex-row">
+                ${props.icons.reject}
+                <h3>An unexpected error occurred.</h3>
+              </div>
+              <p class="large">Please reload the page and try again.</p>
+              <form action="">
+                <button type="button" class="reload big">Reload Page</button>
+              </form>
+            </section>
+
             <section id="game-end" class="${props.game.phase == 'end' ? `is-active` : `is-hidden`}">
               <h1>${props.game.winner} Wins!</h1>
               <p class="large">Final score is ${props.game.players[1].score} (${props.game.players[1].username}) / ${props.game.players[2].score} (${props.game.players[2].username})</p>
@@ -696,7 +695,7 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
                   <div class="cards overlap flex-row">
                     ${props.game.winningPlay.cards.starter != null ? `
                       <div class="card starter">
-                        ${props.game.winningPlay.starter.svg}
+                        ${props.game.winningPlay.cards.starter.svg}
                       </div>` : ''}
                     ${props.game.winningPlay.cards.other.map(function(card){
                       return `
@@ -829,10 +828,10 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
               <h3>You` : `<h3>${props.game.players[props.oppoIndex].username}`} must select a card to play or Go!</h3>
           ` : ''}
           ${props.alert != null ? `
-            <div class="alert reject flex-row" data-type="${props.alert}">
-              ${props.icons.reject}
-              ${props.alert == 'go' ? `<p>If you can play a card from your hand, you must!</p>` : ''}
-              ${props.alert == 'bust' ? `<p>You can't play a card that will exceed 31!</p>` : ''}
+            <div class="alert attention flex-row" data-type="${props.alert}">
+              ${props.icons.attention}
+              ${props.alert == 'go' ? `<h3>If you can play a card from your hand, you must!</h3>` : ''}
+              ${props.alert == 'bust' ? `<h3>You can't play a card that will exceed 31!</h3>` : ''}
             </div>
           ` : ``}
         </div>
@@ -1210,6 +1209,10 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       window.location.replace('/');
     }
 
+    if (event.target.classList.contains('reload')) {
+      window.location.reload();
+    }
+
 
     // Card event listeners
     if (event.target.classList.contains('card')){
@@ -1339,7 +1342,7 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
               log.cards.other = [...storeCopy.game.play].slice(-logCardCount);
             }
             storeCopy.game.log.unshift(newLog(storeCopy, log.player, log.description, log.cards, log.value));
-            if (storeCopy.game.players[storeCopy.userIndex].score > 20){
+            if (storeCopy.game.players[storeCopy.userIndex].score > 60){
               storeCopy.game.winner = storeCopy.game.players[storeCopy.userIndex].username;
               storeCopy.game.winningPlay = newLog(storeCopy, log.player, log.description, log.cards, log.value);
             }
@@ -1366,7 +1369,7 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
             // Assign the automatic Go! points
             storeCopy.game.players[storeCopy.userIndex].score += 1;
             storeCopy.game.log.unshift(newLog(storeCopy, storeCopy.game.players[storeCopy.userIndex].username, ['Go!'], {starter: null, other: null}, 1));
-            if (storeCopy.game.players[storeCopy.userIndex].score > 20){
+            if (storeCopy.game.players[storeCopy.userIndex].score > 60){
               storeCopy.game.winner = storeCopy.game.players[storeCopy.userIndex].username;
               storeCopy.game.winningPlay = newLog(storeCopy, storeCopy.game.players[storeCopy.userIndex].username, ['Go!'], {starter: null, other: null}, 1);
             }
@@ -1550,50 +1553,11 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
 
 
     //
-    // API Updates
-    //
-
-    // let userData;
-    // let otherData;
-    // let gameData;
-
-    if (changeLog.user.changes.length > 0){
-      try {
-        updateData(changeLog.user);
-      } catch {
-        console.error(error);
-      }
-    }
-    if (changeLog.other.changes.length > 0){
-      try {
-        updateData(changeLog.other);
-      } catch {
-        console.error(error);
-      }
-    }
-    if (updateGame){
-      storeCopy.game.date.updated = getDate(true);
-      changeLog.game.changes.push({
-        path: null,
-        value: storeCopy.game,
-        type: 'replace'
-      })
-      try {
-        updateData(changeLog.game);
-      } catch {
-        console.error(error);
-        // Show dialog and prompt user to refresh
-
-      }
-      // gameData = await updateData(changeLog.game);
-      // console.log(gameData);
-    }
-
-    //
     // UI Updates
     //
 
     if (updateGame) {
+      storeCopy.game.date.updated = getDate(true);
       store.data.game = storeCopy.game
     }
 
@@ -1602,6 +1566,46 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       console.log('Changed', storeCopy);
       store.data = storeCopy;
     }
+
+
+    //
+    // API Updates
+    //
+
+    if (changeLog.user.changes.length > 0){
+      try {
+        await updateData(changeLog.user);
+      } catch (error) {
+        console.error(error);
+        // Show dialog and prompt user to reload the page
+        store.data.dialog.pane = 'error';
+      }
+    }
+    if (changeLog.other.changes.length > 0){
+      try {
+        await updateData(changeLog.other);
+      } catch (error) {
+        console.error(error);
+        // Show dialog and prompt user to reload the page
+        store.data.dialog.pane = 'error';
+      }
+    }
+    if (updateGame){
+      changeLog.game.changes.push({
+        path: null,
+        value: storeCopy.game,
+        type: 'replace'
+      })
+      try {
+        await updateData(changeLog.game$$$);
+      } catch (error) {
+        console.error(error);
+        // Show dialog and prompt user to reload the page
+        store.data.dialog.pane = 'error';
+      }
+    }
+
+
 
 
   })
