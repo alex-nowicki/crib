@@ -79,11 +79,6 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
        counts[arr[i]] = 1
        }
       }
-      // for (let prop in counts){
-      //     if (counts[prop] >= 2){
-      //         console.log(prop + " counted: " + counts[prop] + " times.")
-      //     }
-      // }
     return counts;
   }
 
@@ -93,32 +88,37 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
    * @return {Array}    - Returns empty array if no run found, or a sorted array if run found
    */
   let findRunsPlay = function(arr){
-    // Sort the array
-    arr.sort(function(a, b){return a - b});
-    // Check if current elem is either the same as previous or is one more
     let run = [];
-    for (let i = 0; i < (arr.length - 1); i++){
+    for (let i = 3; i <= arr.length; i++){
+      // Slice off sequence to test
+      let seq = arr.slice(-i);
       // Check for duplicate ranks
-      let uniq = [...new Set(arr)];
+      let uniq = [...new Set(seq)];
       // If duplicate found, bail
-      if (arr.length !== uniq.length) {
+      if (seq.length != uniq.length) {
         break;
       }
-      // If run detected, push rank to run array
-      if (arr[i+1] - arr[i] == 1){
-        // If first loop, add the first rank to the run array
-        if (run.length == 0){
-          run.push(uniq[i]);
+      // Sort the array
+      seq.sort(function(a, b){return a - b});
+      // Loop through the array to detect run
+      for (let j = 0; j < (seq.length - 1); j++){
+        if (seq[j+1] - seq[j] == 1){
+          // If final pass, log seq
+          if (j == seq.length - 2) {
+            run = seq;
+          // Otherwise, continue
+          } else {
+            continue;
+          }
+        } else {
+          break;
         }
-        run.push(uniq[i+1]);
-      // Otherwise, reset array and bail
-      } else {
-        run = [];
-        break;
       }
     }
     return run;
   }
+
+  findRunsPlay([1, 2, 3, 4, 5, 6]);
 
   /**
    * Check for runs during the score phase
@@ -131,47 +131,54 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
     // Remove duplicates
     let uniq = [...new Set(arr)];
     let run = [];
-    for (let i = 0; i < (uniq.length - 1); i++){
-      // If run detected, push rank to run array
-      if (uniq[i+1] - uniq[i] == 1){
-        // If first loop, add the first rank to the run array
-        if (run.length == 0){
-          run.push(uniq[i]);
-        }
-        run.push(uniq[i+1]);
-      // Otherwise, bail if run is greater than 2 or reset array and continue
-      } else {
-        // Run broken
-        if (run.length > 2){
-          break;
-        // Run reset
+    for (let i = 0; i < (uniq.length - 2); i++){
+      let seq = uniq.slice(i, uniq.length);
+      for (let j = 0; j < (seq.length - 1); j++){
+        // If run detected, push card to array
+        if (seq[j+1] - seq[j] == 1){
+          // If first pass, push first card as well
+          if (j == 0){
+            run.push(seq[j]);
+          }
+          run.push(seq[j+1]);
+        // Otherwise, bail
         } else {
-          run = [];
+          // If run is smaller than 2, reset
+          if (!(run.length > 2)){
+            run = [];
+          }
           break;
         }
+      }
+      // If run is detected, bail to prevent further checks
+      if (run.length > 2) {
+        break;
       }
     }
     return run;
   }
 
-  let findSubsets = function (array, target) {
+  /**
+   * Check for subsets whose sum meets the target during the score phase
+   * @param {Array} arr - Array of values
+   * @param {Array} target - Target sum
+   * @return {Array}    - Returns empty array if no run found, or an array of subsets if found
+   */
+  let findSubsets = function (arr, target) {
     let result = [];
     let fork = function (i = 0, sum = 0, subset = []) {
       // If sum equals target, log subset and bail
       if (sum === target) {
         result.push(subset);
-        console.log('Fifteen! Track and bail', result);
         return;
       }
       // If end of array, bail
-      if (i === array.length) {
-        console.log('End of array, bail');
+      if (i === arr.length) {
         return;
       }
       // If sum + current arr elem is lesser or equal to target, skip to next int, add to sum, and merge subset and arr elem into new arr
-      console.log(sum, '+', array[i], '=', sum + array[i]);
-      if (sum + array[i] <= target) {
-        fork(i + 1, sum + array[i], subset.concat(array[i]));
+      if (sum + arr[i] <= target) {
+        fork(i + 1, sum + arr[i], subset.concat(arr[i]));
       }
       // Otherwise, skip int and continue
       fork(i + 1, sum, subset);
@@ -227,9 +234,21 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
     // Determine the starter for the round
     } else if (obj.game.phase === "starter"){
       let randomNum = Math.floor(Math.random() * (obj.game.deck.length - 1));
-      obj.game.starter = obj.game.deck[randomNum];
-      obj.game.deck.splice(randomNum, 1);
+      // obj.game.starter = obj.game.deck[randomNum];
+      // obj.game.deck.splice(randomNum, 1);
+      obj.game.starter = {
+        "id": 11,
+        "suit": "club",
+        "rank": 11,
+        "value": 10,
+        "svg": `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 190">
+      <path d="M140 7v176q0 7-7 7H7q-7 0-7-7V7q0-7 7-7h126q7 0 7 7" style="fill:#fff"/>
+      <path d="M13.72 27.9v-1a.46.46 0 0 1 .51-.51h3.21a.46.46 0 0 1 .51.51v1a3.12 3.12 0 0 0 3.39 3.21 3.16 3.16 0 0 0 3.48-3.21V14a.46.46 0 0 1 .51-.51h3.18A.46.46 0 0 1 29 14v13.9c0 4.11-3.09 6.84-7.68 6.84s-7.6-2.74-7.6-6.84Zm112.56 134.2v1.05a.46.46 0 0 1-.51.51h-3.21a.46.46 0 0 1-.51-.51v-1.05a3.12 3.12 0 0 0-3.39-3.21 3.16 3.16 0 0 0-3.48 3.21V176a.46.46 0 0 1-.51.51h-3.18a.46.46 0 0 1-.49-.51v-13.9c0-4.11 3.09-6.84 7.68-6.84s7.6 2.74 7.6 6.84ZM26.25 46.42a4.11 4.11 0 0 0-1.06.15 4 4 0 0 0 .87-2.51 4.06 4.06 0 1 0-8.12 0 4 4 0 0 0 .87 2.51 4.11 4.11 0 0 0-1.06-.15 4.07 4.07 0 1 0 3.4 6.29l-2 4.79h5.62l-2-4.79a4.06 4.06 0 1 0 3.4-6.29Zm87.5 97.16a4.11 4.11 0 0 0 1.06-.15 4 4 0 0 0-.87 2.51 4.06 4.06 0 0 0 8.12 0 4 4 0 0 0-.87-2.51 4.11 4.11 0 0 0 1.06.15 4.07 4.07 0 1 0-3.4-6.29l2-4.79h-5.62l2 4.79a4.06 4.06 0 1 0-3.4 6.29Zm-9.93-52.68-3.66 18.3a1 1 0 0 1-1 .8H40.82a1 1 0 0 1-1-.8l-3.64-18.3a1 1 0 0 1 .7-1.16l6-1.76a27.49 27.49 0 0 1 54.24 0l6 1.76a1 1 0 0 1 .7 1.16ZM40 125h60v-10H40Z"/>
+    </svg>`
+      };
       obj.game.log.unshift(newLog(obj, obj.game.players[obj.game.turn].username, null, {starter: obj.game.starter, other: null}));
+      // Once the starter is determined, pass to the play phase
+      obj.game.phase = "play";
       // Score starter jack
       if (obj.game.starter.rank === 11){
         obj.game.players[obj.game.dealer].score += 2;
@@ -240,8 +259,6 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
           obj.game.winningPlay = newLog(obj, obj.game.players[obj.game.dealer].username, ['Starter jack'], {starter: obj.game.starter, other: null}, 2);
         }
       }
-      // Once the starter is determined, pass to the play phase
-      obj.game.phase = "play";
     }
 
   }
@@ -575,8 +592,6 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       log.value += 5;
     }
 
-    // obj.game.log.unshift(newLog(obj, log.player, log.description, log.cards, log.value));
-
     return log;
   }
 
@@ -613,14 +628,17 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
     store.data.game = tableData.game;
   }
 
-  let openDialog = function(pane){
-    // Show the target pane
-    dialog.querySelector(`#${pane}`).classList.add('is-active');
-    dialog.querySelector(`#${pane}`).classList.remove('is-hidden');
-    // Show the dialog
-    dialog.classList.toggle('is-open');
+  let openDialog = function(obj, target){
+    obj.dialog.pane = target;
+    appElem.classList.add('is-fixed');
   }
 
+  let closeDialog = function(obj){
+    obj.dialog.pane = null;
+    obj.dialog.alert.type = null;
+    obj.dialog.alert.text = null;
+    appElem.classList.remove('is-fixed');
+  }
 
 
 
@@ -633,6 +651,8 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
   let store = new Reef.Store({
     data: {}
   })
+
+  let appElem = document.querySelector('#app');
 
   let initTable = async function(){
 
@@ -677,19 +697,21 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
               <h1>${props.game.winner} Wins!</h1>
               <p class="large">Final score is ${props.game.players[1].score} (${props.game.players[1].username}) / ${props.game.players[2].score} (${props.game.players[2].username})</p>
 
-              ${props.game.winner != null ? `
-                <p class="large">${props.game.winner}
-                    ${props.game.winningPlay.phase == 'starter' ||  props.game.winningPlay.phase == 'play' ? `scored a
+              ${Object.keys(props.game.winningPlay).length != 0 ? `
+                <p class="large">
+                  ${props.game.winningPlay.phase == 'starter' ||  props.game.winningPlay.phase == 'play' ? `${props.game.winner} scored a
                     ${props.game.winningPlay.description.map(function(description){
                       return `${description}`
                     }).join(' + ')}
-                  for ${props.game.winningPlay.value}pt${props.game.winningPlay.value > 1 ? `s` : ``} ` : ``}
-                  ${props.game.winningPlay.phase == 'count' ? `scored a ${props.game.winningPlay.value}pt hand
+                    for ${props.game.winningPlay.value}pt${props.game.winningPlay.value > 1 ? `s` : ``} to win the game.
+                  ` : ``}
+                  ${props.game.winningPlay.phase == 'count' ? `${props.game.winner} scored a ${props.game.winningPlay.value}pt hand
                     (${props.game.winningPlay.description.map(function(description){
                       return `${description}`
-                    }).join(' / ')})
+                    }).join(' / ')}) to win the game.
                   ` : ``}
-                to win the game.</p>
+                  ${props.game.winningPlay.phase == 'forfeit' ? `${props.game.winningPlay.player} forfeited the game.` : ''}
+                </p>
 
                 ${(props.game.winningPlay.cards.other != null || props.game.winningPlay.cards.starter != null) ? `
                   <div class="cards overlap flex-row">
@@ -1010,6 +1032,9 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
                 ${item.phase == 'end' ? `
                   <p class="small">${item.player} is the winner!</p>
                 ` : ''}
+                ${item.phase == 'forfeit' ? `
+                  <p class="small">${item.player} forfeited the game</p>
+                ` : ''}
 
                 ${(item.cards.other != null || item.cards.starter != null) && index < 5 ? `
                   <div class="cards mini flex-row">
@@ -1301,7 +1326,6 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
             type = 'Double';
             log.value += 2;
             logCardCount = logCardCount < 2 ? logCardCount = 2 : logCardCount;
-            console.l
             if (storeCopy.game.play.length > 2 && targetCard.rank == storeCopy.game.play[storeCopy.game.play.length - 3].rank){
               storeCopy.game.players[storeCopy.userIndex].score += 4;
               type = 'Triple';
@@ -1318,21 +1342,16 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
           }
 
           // If sequence, assign points
-          let runLength = 0;
-          for (let i = 3; i < (storeCopy.game.play.length + 1); i++){
-            let seq = storeCopy.game.play.slice(-i);
-            seq = seq.map(x => x.rank);
-            let run = findRunsPlay(seq);
-            if (run.length > 2){
-              runLength = run.length;
-            }
+          let run = [];
+          if (storeCopy.game.play.length > 2){
+            run = findRunsPlay(storeCopy.game.play.map(x => x.rank));
           }
 
-          if (runLength > 2) {
-            storeCopy.game.players[storeCopy.userIndex].score += runLength;
-            log.description.push(`Run of ${runLength}`);
-            log.value += runLength;
-            logCardCount = logCardCount < runLength ? logCardCount = runLength : logCardCount;
+          if (run.length > 2) {
+            storeCopy.game.players[storeCopy.userIndex].score += run.length;
+            log.description.push(`Run of ${run.length}`);
+            log.value += run.length;
+            logCardCount = logCardCount < run.length ? logCardCount = run.length : logCardCount;
           }
 
           if (log.value > 0){
@@ -1547,7 +1566,7 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       })
 
       // Reveal game end dialog
-      storeCopy.dialog.pane = 'game-end';
+      openDialog(storeCopy, 'game-end');
 
     }
 
@@ -1578,7 +1597,7 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       } catch (error) {
         console.error(error);
         // Show dialog and prompt user to reload the page
-        store.data.dialog.pane = 'error';
+        openDialog(store.data, 'error');
       }
     }
     if (changeLog.other.changes.length > 0){
@@ -1587,7 +1606,7 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       } catch (error) {
         console.error(error);
         // Show dialog and prompt user to reload the page
-        store.data.dialog.pane = 'error';
+        openDialog(store.data, 'error');
       }
     }
     if (updateGame){
@@ -1597,11 +1616,11 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
         type: 'replace'
       })
       try {
-        await updateData(changeLog.game$$$);
+        await updateData(changeLog.game);
       } catch (error) {
         console.error(error);
         // Show dialog and prompt user to reload the page
-        store.data.dialog.pane = 'error';
+        openDialog(store.data, 'error');
       }
     }
 

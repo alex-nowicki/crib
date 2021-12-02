@@ -55,6 +55,11 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     button.querySelector('.spinner').classList.toggle('is-hidden');
   }
 
+  let openDialog = function(obj, target){
+    obj.dialog.pane = target;
+    appElem.classList.add('is-fixed');
+  }
+
   let closeDialog = function(obj){
     obj.dialog.pane = null;
     obj.dialog.alert.type = null;
@@ -327,9 +332,12 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
                     <div class="box-main flex-row">
                       <div class="info-group">
                         <p>${game.players[1].score} / ${game.players[2].score}</p>
-                        <p class="small">Winner: ${game.winner}</p>
+                        <p class="small">Winner: ${game.winner}${game.winningPlay.phase == 'forfeit' ? ', by forfeit' : ''}</p>
                         <p class="small">Game ID: ${game.id}</p>
                         <p class="small">Completed: ${game.date.completed}</p>
+                      </div>
+                      <div class="button-group flex-row">
+                        <button type="button" class="join" data-id="${game.id}">Final Situation</button>
                       </div>
                     </div>
                 </li>`
@@ -419,6 +427,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
                           <p class="small">You lost game #${notification.content} against ${notification.sender}</p>
                         </div>
                         <div class="button-group flex-row">
+                          <button type="button" class="join" data-id="${notification.content}">Final Situation</button>
                           <button type="button" class="notification-action clear">Clear</button>
                         </div>
                       ` : ''}
@@ -530,12 +539,10 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
   if (user) {
     user = user.toLowerCase();
-    store.data.dialog.pane = 'load';
-    appElem.classList.add('is-fixed');
+    openDialog(store.data, 'load');
     initProfile(user);
   } else {
-    store.data.dialog.pane = 'login';
-    appElem.classList.add('is-fixed');
+    openDialog(store.data, 'login');
   }
 
   // Refresh profile data every 10 seconds
@@ -572,8 +579,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
         let index = event.target.closest('.notification').dataset.index;
         storeCopy.dialog.index = index;
       }
-      storeCopy.dialog.pane = target;
-      appElem.classList.add('is-fixed');
+      openDialog(storeCopy, target);
     }
 
     if (event.target.classList.contains('login-toggle')) {
@@ -949,7 +955,45 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
 
         changeLog.game.changes.push({
           path: 'winner',
-          value: `${otherUsername}, by forfeit`,
+          value: otherUsername,
+          type: 'replace'
+        })
+
+        changeLog.game.changes.push({
+          path: 'log',
+          value: {
+            phase: 'forfeit',
+            player: storeCopy.user.username,
+            description: [],
+            cards: {
+              starter: null,
+              other: null
+            },
+            value: null,
+            date: getDate(true)
+          },
+          type: 'add'
+        })
+
+        changeLog.game.changes.push({
+          path: 'winningPlay',
+          value: {
+            phase: 'forfeit',
+            player: storeCopy.user.username,
+            description: [],
+            cards: {
+              starter: null,
+              other: null
+            },
+            value: null,
+            date: getDate(true)
+          },
+          type: 'replace'
+        })
+
+        changeLog.game.changes.push({
+          path: 'phase',
+          value: 'end',
           type: 'replace'
         })
 
@@ -1003,11 +1047,10 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
           type: 'add'
         })
 
-
         // Notify the other player
 
         // Log request confirmation for sender
-        let confirmation = notificationFactory(getDate(), 'forfeit', 'sent', storeCopy.user.username, changeLog.other.username, changeLog.game.id);
+        let confirmation = notificationFactory(getDate(), 'forfeit', 'sent', storeCopy.user.username, otherUsername, changeLog.game.id);
 
         // Log change to user profile
         changeLog.user.changes.push({
@@ -1016,7 +1059,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
           type: 'add'
         })
 
-        let notice = notificationFactory(getDate(), 'forfeit', 'received', storeCopy.user.username, changeLog.other.username, changeLog.game.id);
+        let notice = notificationFactory(getDate(), 'forfeit', 'received', storeCopy.user.username, otherUsername, changeLog.game.id);
 
         changeLog.other.changes.push({
           path: 'notifications.unread',
@@ -1085,62 +1128,87 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     let userData;
     let otherData;
     let gameData;
+    let serverError = false;
 
-    if (changeLog.user.changes.length > 0){
+    if (changeLog.game.changes.length > 0 && !serverError){
       try {
-        userData = await updateData(changeLog.user$$);
+        gameData = await updateData(changeLog.game);
       } catch (error) {
         console.error(error);
-        // Show dialog and prompt user to reload the page
-        store.data.dialog.pane = 'error';
+        gameData = error;
+        serverError = true;
       }
+    }
 
+    if (changeLog.other.changes.length > 0 && !serverError){
+      try {
+        otherData = await updateData(changeLog.other);
+      } catch (error) {
+        console.error(error);
+        otherData = error;
+        serverError = true;
+      }
     }
-    if (changeLog.other.changes.length > 0){
-      otherData = await updateData(changeLog.other);
-    }
-    if (changeLog.game.changes.length > 0){
-      gameData = await updateData(changeLog.game);
+
+    if (changeLog.user.changes.length > 0 && !serverError){
+      try {
+        userData = await updateData(changeLog.user);
+      } catch (error) {
+        console.error(error);
+        userData = error;
+        serverError = true;
+      }
     }
 
     //
     // UI Updates
     //
 
-    if (userData){
-      // Update user data
-      storeCopy.user = userData;
-      // Inform user of successfully sent request
-      if (eventType == 'request' || eventType == 'leave' || eventType == 'block'){
-        // Hide load spinner
-        toggleButtonSpinner(event.target);
-        // Show success alert
-        storeCopy.dialog.alert.type ='accept';
-        // Close dialog after a few seconds
-        setTimeout(function(){
-          // Close dialog after delay
-          closeDialog(storeCopy);
-          // Update UI after delay
-          store.data = storeCopy;
-        }, 1000);
-      } else if (eventType == 'friend' || eventType == 'reply'){
-        // Hide load spinner
-        toggleButtonSpinner(event.target);
-      }
-    }
+    if (!serverError){
 
-    if (gameData){
-      if (eventType == 'leave');{
-        // Move game to closed
-        storeCopy.games.open.splice(event.target.dataset.index, 1);
-        storeCopy.games.closed.unshift(gameData);
+      if (userData){
+        // Update user data
+        storeCopy.user = userData;
+        // Inform user of successfully sent request
+        if (eventType == 'request' || eventType == 'leave' || eventType == 'block'){
+          // Hide load spinner
+          toggleButtonSpinner(event.target);
+          // Show success alert
+          storeCopy.dialog.alert.type ='accept';
+          // Close dialog after a few seconds
+          setTimeout(function(){
+            // Close dialog after delay
+            closeDialog(storeCopy);
+            // Update UI after delay
+            store.data = storeCopy;
+          }, 1000);
+        } else if (eventType == 'friend' || eventType == 'reply'){
+          // Hide load spinner
+          toggleButtonSpinner(event.target);
+        }
       }
-    }
 
-    if (updateUI) {
-      console.log('Original', store.data);
-      console.log('Changed', storeCopy);
-      store.data = storeCopy;
+      if (gameData){
+        if (eventType == 'leave');{
+          // Move game to closed
+          storeCopy.games.open.splice(event.target.dataset.index, 1);
+          storeCopy.games.closed.unshift(gameData);
+        }
+      }
+
+      if (updateUI) {
+        console.log('Original', store.data);
+        console.log('Changed', storeCopy);
+        store.data = storeCopy;
+      }
+
+    } else {
+      // Hide load spinner
+      toggleButtonSpinner(event.target);
+      // Prevent UI update
+      updateUI = false;
+      // Show error alert to user
+      openDialog(store.data, 'error');
     }
 
   })
