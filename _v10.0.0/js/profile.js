@@ -16,9 +16,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       open: [],
       closed: []
     },
-    turn: false,
     filter: 'active',
-    listLength: 3,
     dialog: {
       pane: null,
       alert: {
@@ -60,6 +58,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
   let openDialog = function(obj, target){
     obj.dialog.pane = target;
     appElem.classList.add('is-fixed');
+    console.log('passed open', obj)
   }
 
   let closeDialog = function(obj){
@@ -269,6 +268,9 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     }
   })
 
+  console.log(app);
+  console.log(dialog);
+
   let initProfile = async function(user) {
 
     try {
@@ -280,11 +282,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       console.log(error);
     }
 
-    for (const game of store.data.games.open) {
-      if (game.players[game.turn].username == store.data.user.username){
-        store.data.turn = true;
-      }
-    }
+    console.log(store.data);
 
     let profile = new Reef('main', {
       store: store,
@@ -297,6 +295,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
             <div class="section-header flex-row border">
               <h2>Games</h2>
               <div class="filter-group flex-row">
+                <button type="button" id="filter-all" class="filter ${props.filter == 'all' ? 'is-active' : ''}">All</button>
                 <button type="button" id="filter-active" class="filter ${props.filter == 'active' ? 'is-active' : ''}">Active</button>
                 <button type="button" id="filter-turn" class="filter ${props.filter == 'turn' ? 'is-active' : ''}">My Turn</button>
                 <button type="button" id="filter-completed" class="filter ${props.filter == 'completed' ? 'is-active' : ''}">Completed</button>
@@ -304,24 +303,19 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
             </div>
             <ul class="boxes">
 
-              ${props.filter == 'active' && props.games.open.length == 0 ? `
-                <li>
-                  <p>Click the button below to start a new game.</p>
-                </li>
-              ` : ''}
-              ${props.filter == 'turn' && !props.turn ? `
-                <li>
-                  <p>You have no games that require your attention.</p>
-                </li>
-              ` : ''}
-              ${props.filter == 'completed' && props.games.closed.length == 0 ? `
-                <li>
-                  <p>You have yet to complete a game.</p>
+              ${(props.filter == 'all' && props.games.open.length == 0 && props.games.closed.length == 0) ||
+                (props.filter == 'active' && props.games.open.length == 0) ||
+                (props.filter == 'turn' && props.games.open.length == 0) ||
+                (props.filter == 'completed' && props.games.closed.length == 0) ? `
+                <li class="">
+                  <p>You have no ${props.filter} games</p>
                 </li>
               ` : ''}
 
+
+
               ${props.games.open.map(function(game, index){
-                return `<li class="game ${props.filter == 'active' || (props.filter == 'turn' && (game.turn != null && game.players[game.turn].username == props.user.username)) ? `` : `is-hidden`}" data-active data-index="${index}" ${game.turn != null && game.players[game.turn].username == props.user.username ? 'data-turn' : ''}>
+                return `<li class="game ${props.filter == 'all' || props.filter == 'active' || (props.filter == 'turn' && (game.turn != null && game.players[game.turn].username == props.user.username)) ? `` : `is-hidden`}" data-active data-index="${index}" ${game.turn != null && game.players[game.turn].username == props.user.username ? 'data-turn' : ''}>
                   <div class="box-header flex-row">
                     <h3>${game.players[1].username} vs ${game.players[2].username}</h3>
                     <div class="icon-group flex-row ${game.turn && game.players[game.turn].username == props.user.username ? '' : 'is-hidden'}">
@@ -344,8 +338,8 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
                 </li>`
               }).join('')}
 
-              ${props.games.closed.map(function(game, index){
-                return `<li class="game ${props.filter == 'completed' && index < props.listLength ? `` : `is-hidden`}" data-completed>
+              ${props.games.closed.map(function(game){
+                return `<li class="game ${props.filter == 'all' || props.filter == 'completed' ? `` : `is-hidden`}" data-completed>
                     <div class="box-header flex-row">
                       <h3>${game.players[1].username} vs ${game.players[2].username}</h3>
                       <div class="icon-group flex-row"></div>
@@ -364,15 +358,10 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
                 </li>`
               }).join('')}
             </ul>
-
-            ${props.filter == 'active' || props.filter == 'turn' ? `
-              ${props.games.open.length < 5 ? `
-                <button type="button" class="dialog-open big" data-target="new-game">New Game</button>
-              ` : `
-                <button type="button" id="new-game-open" class="big" disabled>Maximum of 5 Active Games${props.icons.locked}</button>
-              `}
+            ${props.games.open.length < 5 ? `
+              <button type="button" class="dialog-open big" data-target="new-game">New Game</button>
             ` : `
-              <button type="button" class="show-more big ${props.games.closed.length < props.listLength ? `is-hidden` : ''}" >Show More</button>
+              <button type="button" id="new-game-open" class="big" disabled>Maximum of 5 Active Games${props.icons.locked}</button>
             `}
 
           </section>
@@ -453,7 +442,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
                           <p class="small">You lost game #${notification.content} against ${notification.sender}</p>
                         </div>
                         <div class="button-group flex-row">
-                          <button type="button" class="join" data-id="${notification.content}">View</button>
+                          <button type="button" class="join" data-id="${notification.content}">Final Situation</button>
                           <button type="button" class="notification-action clear">Clear</button>
                         </div>
                       ` : ''}
@@ -540,8 +529,10 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
   }
 
   document.addEventListener('reef:render', function(event){
+    console.log(event.target);
     if (event.target.id == 'profile'){
       if (store.data.dialog.pane == 'login' || store.data.dialog.pane == 'signup'){
+        console.log('Spinner Toggle');
         toggleButtonSpinner(document.querySelector(`#${store.data.dialog.pane}-submit`));
         closeDialog(store.data);
       } else if (store.data.dialog.pane == 'load'){
@@ -566,6 +557,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
     openDialog(store.data, 'load');
     initProfile(user);
   } else {
+    console.log('open dialog')
     openDialog(store.data, 'login');
   }
 
@@ -691,14 +683,6 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       let id = event.target.id;
       id = id.replace('filter-', '');
       storeCopy.filter = id;
-      if (id != 'completed'){
-        storeCopy.listLength = 3;
-      }
-    }
-
-    if (event.target.classList.contains('show-more')){
-      updateUI = true;
-      storeCopy.listLength += 5;
     }
 
     if (event.target.classList.contains('join')){
@@ -1121,6 +1105,7 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
         let length = storeCopy.user.notifications.unread.length;
         for (let i = length - 1; i > -1; i--){
           if (storeCopy.user.notifications.unread[i].sender.toLowerCase() == changeLog.other.username){
+            console.log(storeCopy.user.notifications.unread[i]);
             storeCopy.user.notifications.read.unshift(storeCopy.user.notifications.unread[i]);
             storeCopy.user.notifications.unread.splice(i, 1);
           }
