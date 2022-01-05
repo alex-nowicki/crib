@@ -664,7 +664,14 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       store.data.players = tableData.players;
       store.data.game = tableData.game;
     } catch (error){
-      console.log(error);
+      // Check if the response is JSON or not
+      let isJSON = error.headers.get('content-type').includes('application/json');
+      // If JSON, use text(). Otherwise, use json().
+      let getMsg = isJSON ? error.json() : error.text();
+      // Warn the error and message when it resolves
+      getMsg.then(function (msg) {
+        console.warn(error, msg);
+      });
     }
 
     if (store.data.game.players[1].username.toLowerCase() == store.data.user.toLowerCase()){
@@ -1595,7 +1602,14 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       try {
         await updateData(changeLog.user);
       } catch (error) {
-        console.error(error);
+        // Check if the response is JSON or not
+        let isJSON = error.headers.get('content-type').includes('application/json');
+        // If JSON, use text(). Otherwise, use json().
+        let getMsg = isJSON ? error.json() : error.text();
+        // Warn the error and message when it resolves
+        getMsg.then(function (msg) {
+          console.warn(error, msg);
+        });
         // Show dialog and prompt user to reload the page
         openDialog(store.data, 'error');
       }
@@ -1604,7 +1618,14 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       try {
         await updateData(changeLog.other);
       } catch (error) {
-        console.error(error);
+        // Check if the response is JSON or not
+        let isJSON = error.headers.get('content-type').includes('application/json');
+        // If JSON, use text(). Otherwise, use json().
+        let getMsg = isJSON ? error.json() : error.text();
+        // Warn the error and message when it resolves
+        getMsg.then(function (msg) {
+          console.warn(error, msg);
+        });
         // Show dialog and prompt user to reload the page
         openDialog(store.data, 'error');
       }
@@ -1618,7 +1639,14 @@ import { notificationFactory, cards, checkLocalStorage, clearLocalStorage, getDa
       try {
         await updateData(changeLog.game);
       } catch (error) {
-        console.error(error);
+        // Check if the response is JSON or not
+        let isJSON = error.headers.get('content-type').includes('application/json');
+        // If JSON, use text(). Otherwise, use json().
+        let getMsg = isJSON ? error.json() : error.text();
+        // Warn the error and message when it resolves
+        getMsg.then(function (msg) {
+          console.warn(error, msg);
+        });
         // Show dialog and prompt user to reload the page
         openDialog(store.data, 'error');
       }

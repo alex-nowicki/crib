@@ -277,7 +277,14 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       store.data.games = profileData.games;
       console.log('Data received');
     } catch (error){
-      console.log(error);
+      // Check if the response is JSON or not
+      let isJSON = error.headers.get('content-type').includes('application/json');
+      // If JSON, use text(). Otherwise, use json().
+      let getMsg = isJSON ? error.json() : error.text();
+      // Warn the error and message when it resolves
+      getMsg.then(function (msg) {
+        console.warn(error, msg);
+      });
     }
 
     for (const game of store.data.games.open) {
@@ -1165,7 +1172,14 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       try {
         gameData = await updateData(changeLog.game);
       } catch (error) {
-        console.error(error);
+        // Check if the response is JSON or not
+        let isJSON = error.headers.get('content-type').includes('application/json');
+        // If JSON, use text(). Otherwise, use json().
+        let getMsg = isJSON ? error.json() : error.text();
+        // Warn the error and message when it resolves
+        getMsg.then(function (msg) {
+          console.warn(error, msg);
+        });
         gameData = error;
         serverError = true;
       }
@@ -1175,7 +1189,14 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       try {
         otherData = await updateData(changeLog.other);
       } catch (error) {
-        console.error(error);
+        // Check if the response is JSON or not
+        let isJSON = error.headers.get('content-type').includes('application/json');
+        // If JSON, use text(). Otherwise, use json().
+        let getMsg = isJSON ? error.json() : error.text();
+        // Warn the error and message when it resolves
+        getMsg.then(function (msg) {
+          console.warn(error, msg);
+        });
         otherData = error;
         serverError = true;
       }
@@ -1185,7 +1206,14 @@ import { notificationFactory, checkLocalStorage, clearLocalStorage, checkPlayer,
       try {
         userData = await updateData(changeLog.user);
       } catch (error) {
-        console.error(error);
+        // Check if the response is JSON or not
+        let isJSON = error.headers.get('content-type').includes('application/json');
+        // If JSON, use text(). Otherwise, use json().
+        let getMsg = isJSON ? error.json() : error.text();
+        // Warn the error and message when it resolves
+        getMsg.then(function (msg) {
+          console.warn(error, msg);
+        });
         userData = error;
         serverError = true;
       }
